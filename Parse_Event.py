@@ -15,11 +15,11 @@ recordBlock = record  + OneOrMore(eventData) + msnEventExpanded
 pData = Suppress(Literal("PERTINENT DATA"))
 SPACE_CHARS = ' \t'
 dataField = CharsNotIn(SPACE_CHARS,max=25)
-space = Word(SPACE_CHARS, exact=1)^Word(SPACE_CHARS, exact=2)^Word(SPACE_CHARS, exact=3)^Word(SPACE_CHARS, exact=4)
+space = Word(SPACE_CHARS, exact=1)^Word(SPACE_CHARS, exact=2)^Word(SPACE_CHARS, exact=3)^Word(SPACE_CHARS, exact=4)^Word(SPACE_CHARS, exact=5)
 dataKey = delimitedList(dataField, delim=space, combine=True)
 dataValue = Combine(dataField + ZeroOrMore(space + dataField))
 
-dataBlock = Group(dataKey + dataValue) + Optional(Suppress("(" + Word(alphanums) + ")")) + Suppress(LineEnd()) |  Group(dataKey + Suppress("(") + Word(alphanums) + Suppress(")")) + Suppress(LineEnd()) | Group(dataKey + dataValue) + Suppress(LineEnd())
+dataBlock = Group(dataKey + dataValue) + Optional(Suppress("(" + dataValue + ")")) + Optional(Suppress("(" + Word(alphanums) + ")")) + Suppress(LineEnd()) |   Group(dataKey + Suppress("(") + Word(alphanums) + Suppress(")")) + Suppress(LineEnd()) | Group(dataKey + dataValue) + Suppress(LineEnd()) | Group(dataKey + Literal('Undefined Value')) + Suppress("(Enum Value" + Word(nums) +")" +  "(" + Word(alphanums) + ")" + LineEnd())
 
 name_parser = Dict(recordBlock + pData + OneOrMore(dataBlock))
 
