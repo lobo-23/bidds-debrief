@@ -53,7 +53,7 @@ def JdamParse(wpn):
     #print(wpn['ALT'])
 
     try:
-        wpn['LAT'] = wpn['Latitude'].replace('  deg', '').replace(':', ' ')
+        wpn['LAT'] = wpn['Latitude'].replace('  deg', '').replace(':', ' ').replace('N 0', "N ").replace('S 0', "S ")
     except:
         wpn['LAT'] = 'ERR'
     try:
@@ -84,8 +84,8 @@ def JdamParse(wpn):
     # print(wpn['TGT ELEV'])
 
     try:
-        wpn['GTRK'] = round(float(wpn['Ground Track'].replace('+ ', '').replace('- ', '').replace('  deg','')))
-        if '-' in wpn['Ground Track']:
+        wpn['GTRK'] = round(float(wpn['GND Trk Angle'].replace('+ ', '').replace('- ', '').replace('  deg','')))
+        if '-' in wpn['GND Trk Angle']:
             wpn['GTRK'] = 360 - wpn['GTRK']
     except:
         wpn['GTRK'] = 'ERR'
@@ -250,7 +250,7 @@ def WcmdParse(wpn):
     wpn['PrimeNav'] = wpn['Prime Nav System']
     wpn['Delay'] = wpn['Fuze Option'].replace('Prox_Fuzing', 'PROX')
 
-sample = open('MALD.txt', 'r', errors='ignore').read()
+sample = open('Test 1012_2.txt', 'r', errors='ignore').read()
 
 record = Group(Literal("Record Number") + Word(nums)) + Suppress(Literal("Weapon Scoring") + lineEnd())
 msnEventExpanded = Suppress(Group(Literal("Launch") + LineEnd())) | Suppress(Group(Literal("Gravity Weapon Scoring") + LineEnd()))| Suppress(Group(Literal("Weapon Launch") + LineEnd()))
@@ -260,107 +260,109 @@ eventValue = SkipTo(lineEnd)
 eventData = NotAny("Launch") + NotAny("Gravity Weapon Scoring") + NotAny("Weapon Launch") + Group(eventKey + Suppress(":") + eventValue) + Suppress(lineEnd())
 recordBlock = record + OneOrMore(eventData) + msnEventExpanded
 
-
 pData = Suppress(Literal("PERTINENT DATA"))
 SPACE_CHARS = ' \t'
 dataField = CharsNotIn(SPACE_CHARS)
 space = Word(SPACE_CHARS, exact=1)^Word(SPACE_CHARS, exact=2)^Word(SPACE_CHARS, exact=3)^Word(SPACE_CHARS, exact=4)^Word(SPACE_CHARS, exact=5)
 dataKey = delimitedList(dataField, delim=space, combine=True)
 dataValue = Combine(dataField + ZeroOrMore(space + dataField))
-
 dataBlock = Group(dataKey + dataValue) + Optional(Suppress("(" + Word(alphanums) + ")")) + Suppress(LineEnd()) |  Group(dataKey + Suppress("(") + Word(alphanums) + Suppress(")")) + Suppress(LineEnd()) | Group(dataKey + dataValue) + Suppress(LineEnd())
 
 name_parser = Dict(recordBlock + pData + OneOrMore(dataBlock))
 
 count = 0
-jcount = 0
-gcount = 0
-wcount = 0
-jmcount = 0
-mcount = 0
+
+jdam = []
+gwd = []
+wcmd = []
+jassm = []
+mald = []
 
 if debug:
-    for obj, start, end in name_parser.scanString(sample):
-        print(obj.asDict())
+    for wpn, start, end in name_parser.scanString(sample):
+        #print(obj.asDict())
         if obj['Application ID'] == '13':
             obj.pop("TGTING Data", None)
-            #JdamParse(obj)
+            JdamParse(obj)
+            jdam.append(obj)
             print(obj.asDict())
         if obj['Application ID'] == '1':
-            #GravParse(obj)
+            GravParse(obj)
+            gwd.append(obj)
             print(obj.asDict())
         if obj['Application ID'] == '7':
-            #WcmdParse(obj)
+            WcmdParse(obj)
+            wcmd.append(obj)
             print(obj.asDict())
         if obj['Application ID'] == '9':
             #JassmParse(obj)
+            jassm.append(obj)
             print(obj.asDict())
         if obj['Application ID'] == '12':
             #MaldParse(obj)
+            mald.append(obj)
             print(obj.asDict())
         count += 1
 else:
-    with open('raw_gravity.csv', 'w+', newline='') as gravity:
-        with open('raw_jdam.csv', 'w+', newline='') as jdam:
-            with open('raw_wcmd.csv', 'w+', newline='') as wcmd:
-                with open('raw_jassm.csv', 'w+', newline='') as jassm:
-                    with open('raw_mald.csv', 'w+', newline='') as mald:
-                        writergrav = csv.writer(gravity)
-                        writerjdam = csv.writer(jdam)
-                        writerwcmd = csv.writer(wcmd)
-                        writerjassm = csv.writer(jassm)
-                        writermald = csv.writer(mald)
+    for obj, start, end in name_parser.scanString(sample):
+        currentWPN = obj.asDict()
+        if obj['Application ID'] == '13':
+            obj.pop("TGTING Data", None)
+            JdamParse(obj)
+            currentWPN = obj.asDict()
+            currentWPN['wpn'] = 'JDAM'
+            jdam.append(currentWPN)
+        if obj['Application ID'] == '1':
+            GravParse(obj)
+            obj.append(['wpn','gwd'])
+            currentWPN = obj.asDict()
+            currentWPN['wpn'] = 'GWD'
+            gwd.append(currentWPN)
+        if obj['Application ID'] == '7':
+            WcmdParse(obj)
+            obj.append(['wpn','wcmd'])
+            currentWPN = obj.asDict()
+            currentWPN['wpn'] = 'WCMD'
+            wcmd.append(currentWPN)
+        if obj['Application ID'] == '9':
+            #JassmParse(obj)
+            obj.append(['wpn','jassm'])
+            currentWPN = obj.asDict()
+            currentWPN['wpn'] = 'JASSM'
+            jassm.append(currentWPN)
+        if obj['Application ID'] == '12':
+            #MaldParse(obj)
+            obj.append(['wpn','mald'])
+            currentWPN = obj.asDict()
+            currentWPN['wpn'] = 'MALD'
+            mald.append(currentWPN)
+        count += 1
 
-                        for obj, start, end in name_parser.scanString(sample):
-                            if obj['Application ID'] == '13':
-                                obj.pop("TGTING Data", None)
-                                JdamParse(obj)
-                                if jcount == 0:
-                                    writerjdam.writerow(obj.asDict().keys())
-                                input = list(obj.asDict().values())
-                                writerjdam.writerow(input)
-                                jcount += 1
-                            if obj['Application ID'] == '1':
-                                GravParse(obj)
-                                if gcount == 0:
-                                    writergrav.writerow(obj.asDict().keys())
-                                input = list(obj.asDict().values())
-                                writergrav.writerow(input)
-                                gcount += 1
-                            if obj['Application ID'] == '7':
-                                WcmdParse(obj)
-                                if wcount == 0:
-                                    writerwcmd.writerow(obj.asDict().keys())
-                                input = list(obj.asDict().values())
-                                writerwcmd.writerow(input)
-                                wcount += 1
-                            if obj['Application ID'] == '9':
-                                #JassmParse(obj)
-                                if jmcount == 0:
-                                    writerjassm.writerow(obj.asDict().keys())
-                                input = list(obj.asDict().values())
-                                writerjassm.writerow(input)
-                                jmcount += 1
-                            if obj['Application ID'] == '12':
-                                #MaldParse(obj)
-                                if mcount == 0:
-                                    writermald.writerow(obj.asDict().keys())
-                                input = list(obj.asDict().values())
-                                writermald.writerow(input)
-                                mcount += 1
-                            count += 1
-    path = './'
-    all_files = glob.glob(os.path.join(path, "*.csv"))
-    fname = 'raw_data' + datetime.datetime.now().strftime('%H%M%S') + '.xlsx'
+    allWPNs = []
+    if len(jdam) > 0:
+        dfJDAM = pd.DataFrame(jdam)
+        allWPNs.append(dfJDAM)
+    if len(gwd) > 0:
+        dfGWD = pd.DataFrame(gwd)
+        allWPNs.append(dfGWD)
+    if len(wcmd) > 0:
+        dfWCMD = pd.DataFrame(wcmd)
+        allWPNs.append(dfWCMD)
+    if len(jassm) > 0:
+        dfJASSM = pd.DataFrame(jassm)
+        allWPNs.append(dfJASSM)
+    if len(mald) > 0:
+        dfMALD = pd.DataFrame(dfMALD)
+        allWPNs.append(dfJDAM)
+
+    fname = 'raw_data ' + datetime.datetime.now().strftime('%H%M%S') + '.xlsx'
+
     writer = pd.ExcelWriter(fname)
-    for f in all_files:
-        df = pd.read_csv(f)
-        if not df.empty:
-            df.to_excel(writer, sheet_name=os.path.splitext(os.path.basename(f))[0], index=False)
 
+    for df in allWPNs:
+        sheetname = df.loc[0,'wpn']
+        df.to_excel(writer, sheet_name=str(sheetname), index=False)
     writer.save()
-
-
 
 print(count)
 
