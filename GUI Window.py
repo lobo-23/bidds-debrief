@@ -17,12 +17,13 @@ class Ui(QtWidgets.QDialog):
         self.show() # Show the GUI
 
     def FDRLoadPressed(self):
-        # This is executed when the button is pressed
-        print('FDRLoadPressed')
-
+        fdrname = QtWidgets.QFileDialog.getOpenFileName(self, 'Open .B52FDR file',
+                                            'c:\\', "FDR File (*.B52FDR)")
+        print(fdrname)
     def TXTLoadPressed(self):
-        # This is executed when the button is pressed
-        print('TXTLoadPressed')
+        txtname = QtWidgets.QFileDialog.getOpenFileName(self, 'Open TXT file',
+                                            'c:\\', "Text File (*.txt)")
+        print(txtname)
     def BIDDSLoadPressed(self):
         # This is executed when the button is pressed
         print('BIDDSLoadPressed')
