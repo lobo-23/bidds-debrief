@@ -47,7 +47,7 @@ def JdamParse(wpn):
     # print(wpn['WPN Type'])
 
     try:
-        wpn['ALT'] = str(round(float(wpn['Altitude'].replace('  feet', '').replace('+ ', '')))) + "'"
+        wpn['ALT'] = str(round(float(wpn['Altitude'].replace('  feet', '').replace('+ ', ''))))
     except:
         wpn['ALT'] = 'ERR'
     #print(wpn['ALT'])
@@ -96,8 +96,6 @@ def JdamParse(wpn):
     wpn['GS'] = round(float(wpn['GND Speed'].replace('  ft/sec', '')) * 0.592484)
     # print(wpn['GS'])
 
-    wpn['PrimeNav'] = wpn['Prime Nav System']
-    # print(wpn['PrimeNav'])
 
     if wpn['Func at Impact'] == 'TRUE':
         wpn['Delay'] = "IMP"
@@ -105,8 +103,18 @@ def JdamParse(wpn):
         wpn['Delay'] = 'PROX'
     elif wpn['Func on Time Aft Impact'] == 'TRUE':
         wpn['Delay'] = 'DEL'
-    elif wpn['Function on Void'] == 'TRUE':
-        wpn['Delay'] = 'VOID' + str(wpn['Void Number'])
+
+    try:
+        if wpn['Function on Void'] == 'TRUE':
+            wpn['Delay'] = 'VOID' + str(wpn['Void Number'])
+    except:
+        try:
+            if wpn['Func on Void'] == 'TRUE':
+                wpn['Delay'] = 'VOID' + str(wpn['Void Number'])
+        except:
+            print('Can\'t find Func on Void')
+
+
 
     return wpn
 def GravParse(wpn):
@@ -135,7 +143,7 @@ def GravParse(wpn):
     wpn['WPN Type'] = "B" + "{:02d}".format(int(wpn['Bomb Type']))
 
     try:
-        wpn['ALT'] = str(round(float(wpn['Aircraft Altitude'].replace('  feet', '').replace('+ ', '')))) + "'"
+        wpn['ALT'] = str(round(float(wpn['Aircraft Altitude'].replace('  feet', '').replace('+ ', ''))))
     except:
         wpn['ALT'] = 'ERR'
 
@@ -180,7 +188,6 @@ def GravParse(wpn):
 
     wpn['GS'] = round(float(wpn['Ground Speed'].replace('  ft/sec', '').replace('+ ', '')) * 0.592484)
 
-    wpn['PrimeNav'] = ""
     wpn['Delay'] = ""
     if wpn['First Sample Valid'] == 'True':
         wpn['FOM'] = wpn['FOM First Sample']
@@ -216,7 +223,7 @@ def WcmdParse(wpn):
     wpn['WPN Type'] = wpn['Store Description'].replace('CBU-', '')
 
     try:
-        wpn['ALT'] = str(round(float(wpn['Altitude'].replace('  feet', '').replace('+ ', '')))) + "'"
+        wpn['ALT'] = str(round(float(wpn['Altitude'].replace('  feet', '').replace('+ ', ''))))
     except:
         wpn['ALT'] = 'ERR'
 
@@ -244,13 +251,57 @@ def WcmdParse(wpn):
     except:
         wpn['TGT LAT'] = 'ERR'
 
-    wpn['GTRK'] = ''
     wpn['LS'] = wpn['Device ID'].replace('P', '')
     wpn['GS'] = round(float(wpn['Ground Speed'].replace('  ft/sec', '')) * 0.592484)
-    wpn['PrimeNav'] = wpn['Prime Nav System']
     wpn['Delay'] = wpn['Fuze Option'].replace('Prox_Fuzing', 'PROX')
 
-sample = open('Test 1012_2.txt', 'r', errors='ignore').read()
+def msnEventparse(input, msnevents):
+
+    records = msnevents
+
+    input['Time (UTC)'] = pd.to_datetime(input['Date'] + ' ' + input['Time (UTC)'])
+    records['Time (UTC)'] = pd.to_datetime(records['Date'] + ' ' + records['Time (UTC)'])
+
+    msnEventsIndex = [pd.Index(records['Time (UTC)']).get_loc(x, method='nearest') for x in input['Time (UTC)']]
+    msnEvent = [records['Time (UTC)'].loc[x] for x in msnEventsIndex]
+    recordNumber = [records['Record Number'].loc[x] for x in msnEventsIndex]
+    XHair = [records['XHair'].loc[x] for x in msnEventsIndex]
+    PrimeNav = [records['PrimeNav'].loc[x] for x in msnEventsIndex]
+    PrimeNavAiding = [records['PrimeNavAiding'].loc[x] for x in msnEventsIndex]
+    IAS = [records['IAS'].loc[x] for x in msnEventsIndex]
+    TAS = [records['TAS'].loc[x] for x in msnEventsIndex]
+    MHDG = [records['MHDG'].loc[x] for x in msnEventsIndex]
+    GTRK= [records['GTRK'].loc[x] for x in msnEventsIndex]
+    FCI= [records['FCI'].loc[x] for x in msnEventsIndex]
+    Mach= [records['Mach'].loc[x] for x in msnEventsIndex]
+    Temp= [records['Temp'].loc[x] for x in msnEventsIndex]
+    WindDir= [records['WindDir'].loc[x] for x in msnEventsIndex]
+    WindSpeed = [records['WindSpeed'].loc[x] for x in msnEventsIndex]
+
+
+    input.insert(len(input.columns),"msnEventTime", msnEvent, False)
+    input.insert(len(input.columns),"RecordNumber", recordNumber, False)
+    input.insert(len(input.columns), "XHair", XHair, False)
+    try:
+        input.insert(len(input.columns), "PrimeNav", PrimeNav, False)
+    except:
+        print('Prime Nav already exists')
+    input.insert(len(input.columns), "PrimeNavAiding", PrimeNavAiding, False)
+    input.insert(len(input.columns), "IAS", IAS, False)
+    input.insert(len(input.columns), "TAS", TAS, False)
+    input.insert(len(input.columns), "MHDG", MHDG, False)
+    try:
+        input.insert(len(input.columns), "GTRK", GTRK, False)
+    except:
+        print("GTRK already exists")
+    input.insert(len(input.columns), "FCI", FCI, False)
+    input.insert(len(input.columns), "Mach", Mach, False)
+    input.insert(len(input.columns), "Temp", Temp, False)
+    input.insert(len(input.columns), "WindDir", WindDir, False)
+    input.insert(len(input.columns), "WindSpeed", WindSpeed, False)
+
+    return input
+sample = open('Test 1012.txt', 'r', errors='ignore').read()
 
 record = Group(Literal("Record Number") + Word(nums)) + Suppress(Literal("Weapon Scoring") + lineEnd())
 msnEventExpanded = Suppress(Group(Literal("Launch") + LineEnd())) | Suppress(Group(Literal("Gravity Weapon Scoring") + LineEnd()))| Suppress(Group(Literal("Weapon Launch") + LineEnd()))
@@ -339,22 +390,49 @@ else:
         count += 1
 
     allWPNs = []
+    dfAllWPNS = []
     if len(jdam) > 0:
         dfJDAM = pd.DataFrame(jdam)
+        msnEventparse(dfJDAM,pd.read_csv('msn_events.csv'))
         allWPNs.append(dfJDAM)
+        dfJDAMfiltered = dfJDAM.filter(['Record Number', 'Tail', 'wpn', 'Dest', 'TOT', 'TOR', 'TOF', 'WPN Type','TGT LAT',
+                                      'TGT LON', 'TGT ELEV', 'PrimeNav', 'XHair', 'PrimeNavAiding','ALT', 'GTRK', 'IAS',
+                                      'MHDG', 'TAS', 'LS','FCI'], axis=1)
+        dfAllWPNS.append(dfJDAMfiltered)
     if len(gwd) > 0:
         dfGWD = pd.DataFrame(gwd)
+        msnEventparse(dfGWD, pd.read_csv('msn_events.csv'))
         allWPNs.append(dfGWD)
+        dfGWDfiltered = dfGWD.filter(['Record Number', 'Tail', 'wpn', 'Dest', 'TOT', 'TOR', 'TOF', 'WPN Type','TGT LAT',
+                                      'TGT LON', 'TGT ELEV', 'PrimeNav', 'XHair', 'PrimeNavAiding','ALT', 'GTRK', 'IAS',
+                                      'MHDG', 'TAS', 'LS','FCI'], axis=1)
+        dfAllWPNS.append(dfGWDfiltered)
     if len(wcmd) > 0:
         dfWCMD = pd.DataFrame(wcmd)
+        msnEventparse(dfWCMD, pd.read_csv('msn_events.csv'))
         allWPNs.append(dfWCMD)
+        dfWCMDfiltered = dfWCMD.filter(['Record Number', 'Tail', 'wpn', 'Dest', 'TOT', 'TOR', 'TOF', 'WPN Type','TGT LAT',
+                                      'TGT LON', 'TGT ELEV', 'PrimeNav', 'XHair', 'PrimeNavAiding','ALT', 'GTRK', 'IAS',
+                                      'MHDG', 'TAS', 'LS','FCI'], axis=1)
+        dfAllWPNS.append(dfWCMDfiltered)
     if len(jassm) > 0:
         dfJASSM = pd.DataFrame(jassm)
+        msnEventparse(dfJASSM, pd.read_csv('msn_events.csv'))
         allWPNs.append(dfJASSM)
+        dfJASSMfiltered = dfJASSM.filter(['Record Number', 'Tail', 'wpn', 'Dest', 'TOT', 'TOR', 'TOF', 'WPN Type','TGT LAT',
+                                      'TGT LON', 'TGT ELEV', 'PrimeNav', 'XHair', 'PrimeNavAiding','ALT', 'GTRK', 'IAS',
+                                      'MHDG', 'TAS', 'LS','FCI'], axis=1)
+        dfAllWPNS.append(dfJASSMfiltered)
     if len(mald) > 0:
         dfMALD = pd.DataFrame(dfMALD)
+        msnEventparse(dfMALD, pd.read_csv('msn_events.csv'))
         allWPNs.append(dfJDAM)
+        dfMALDfiltered = dfMALD.filter(['Record Number', 'Tail', 'wpn', 'Dest', 'TOT', 'TOR', 'TOF', 'WPN Type','TGT LAT',
+                                      'TGT LON', 'TGT ELEV', 'PrimeNav', 'XHair', 'PrimeNavAiding','ALT', 'GTRK', 'IAS',
+                                      'MHDG', 'TAS', 'LS','FCI'], axis=1)
+        dfAllWPNS.append(dfMALDfiltered)
 
+    dfCombined = pd.concat(dfAllWPNS)
     fname = 'raw_data ' + datetime.datetime.now().strftime('%H%M%S') + '.xlsx'
 
     writer = pd.ExcelWriter(fname)
@@ -362,6 +440,7 @@ else:
     for df in allWPNs:
         sheetname = df.loc[0,'wpn']
         df.to_excel(writer, sheet_name=str(sheetname), index=False)
+    dfCombined.to_excel(writer, sheet_name='Combined', index=False)
     writer.save()
 
 print(count)
