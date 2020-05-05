@@ -7,97 +7,40 @@
     <x>0</x>
     <y>0</y>
     <width>750</width>
-    <height>298</height>
+    <height>320</height>
    </rect>
   </property>
   <property name="windowTitle">
    <string>Debrief Card</string>
   </property>
-  <widget class="QLabel" name="label">
-   <property name="geometry">
-    <rect>
-     <x>30</x>
-     <y>30</y>
-     <width>301</width>
-     <height>31</height>
-    </rect>
-   </property>
-   <property name="font">
-    <font>
-     <family>Calibri</family>
-     <pointsize>18</pointsize>
-     <weight>75</weight>
-     <bold>true</bold>
-    </font>
-   </property>
-   <property name="text">
-    <string>1. Save FDR Files using JMPS</string>
-   </property>
-  </widget>
+  <property name="windowIcon">
+   <iconset>
+    <normaloff>nuke-mw2-png-5.png</normaloff>nuke-mw2-png-5.png</iconset>
+  </property>
   <widget class="QPushButton" name="pushButton_BIDDSOpen">
    <property name="geometry">
     <rect>
-     <x>600</x>
-     <y>240</y>
-     <width>101</width>
-     <height>31</height>
-    </rect>
-   </property>
-   <property name="text">
-    <string>Open BIDDS</string>
-   </property>
-  </widget>
-  <widget class="QLabel" name="label_2">
-   <property name="geometry">
-    <rect>
-     <x>30</x>
-     <y>90</y>
-     <width>301</width>
-     <height>21</height>
-    </rect>
-   </property>
-   <property name="font">
-    <font>
-     <family>Calibri</family>
-     <pointsize>18</pointsize>
-     <weight>75</weight>
-     <bold>true</bold>
-    </font>
-   </property>
-   <property name="text">
-    <string>2. Convert FDR to TXT File</string>
-   </property>
-  </widget>
-  <widget class="QPushButton" name="pushButton_FDRLoad">
-   <property name="geometry">
-    <rect>
-     <x>100</x>
-     <y>120</y>
+     <x>130</x>
+     <y>70</y>
      <width>151</width>
      <height>41</height>
     </rect>
    </property>
    <property name="font">
     <font>
-     <family>Calibri</family>
-     <pointsize>14</pointsize>
-     <weight>50</weight>
-     <bold>false</bold>
+     <pointsize>10</pointsize>
     </font>
    </property>
-   <property name="toolTip">
-    <string>Copys FDR and DRD File to BIDDS Folder, Open BIDDS</string>
-   </property>
    <property name="text">
-    <string>Select FDR File</string>
+    <string>Open BIDDS</string>
    </property>
   </widget>
   <widget class="QLabel" name="label_3">
    <property name="geometry">
     <rect>
-     <x>30</x>
-     <y>170</y>
-     <width>301</width>
+     <x>70</x>
+     <y>160</y>
+     <width>251</width>
      <height>21</height>
     </rect>
    </property>
@@ -110,7 +53,7 @@
     </font>
    </property>
    <property name="text">
-    <string>3. Create Debrief Card</string>
+    <string>2. Create Debrief Card</string>
    </property>
   </widget>
   <widget class="QLineEdit" name="line_BEName">
@@ -254,16 +197,16 @@
   <widget class="QPushButton" name="pushButton_TXTLoad">
    <property name="geometry">
     <rect>
-     <x>100</x>
-     <y>200</y>
+     <x>130</x>
+     <y>190</y>
      <width>151</width>
      <height>41</height>
     </rect>
    </property>
    <property name="font">
     <font>
-     <family>Calibri</family>
-     <pointsize>14</pointsize>
+     <family>MS Shell Dlg 2</family>
+     <pointsize>10</pointsize>
      <weight>50</weight>
      <bold>false</bold>
     </font>
@@ -273,6 +216,40 @@
    </property>
    <property name="text">
     <string>Select TXT File</string>
+   </property>
+  </widget>
+  <widget class="QLabel" name="label_4">
+   <property name="geometry">
+    <rect>
+     <x>70</x>
+     <y>30</y>
+     <width>261</width>
+     <height>21</height>
+    </rect>
+   </property>
+   <property name="font">
+    <font>
+     <family>Calibri</family>
+     <pointsize>18</pointsize>
+     <weight>75</weight>
+     <bold>true</bold>
+    </font>
+   </property>
+   <property name="text">
+    <string>1. Convert FDR to Text File</string>
+   </property>
+  </widget>
+  <widget class="QProgressBar" name="progressBar">
+   <property name="geometry">
+    <rect>
+     <x>50</x>
+     <y>270</y>
+     <width>671</width>
+     <height>23</height>
+    </rect>
+   </property>
+   <property name="value">
+    <number>24</number>
    </property>
   </widget>
  </widget>
