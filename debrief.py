@@ -1,5 +1,6 @@
 import pandas as pd
 import numpy as np
+
 from PyQt5.QtCore import *
 from PyQt5.QtWidgets import *
 from PyQt5.QtGui import *
@@ -8,6 +9,8 @@ import glob, sys, datetime, os, openpyxl, threading, timeit, time, shutil
 from pyqtspinner.spinner import WaitingSpinner
 from utils import *
 from msnparse import *
+from LatLon23 import string2latlon
+from pyproj import _datadir, datadir
 import config
 
 class External(QThread):
@@ -21,18 +24,17 @@ class External(QThread):
 class MainWindow(QDialog):
     def __init__(self, parent=None):
         super(MainWindow, self).__init__(parent) # Call the inherited classes __init__ method
-        uic.loadUi('GUI.ui', self) # Load the .ui file
-
+        uic.loadUi('maingui.ui', self) # Load the .ui file
 
         self.TXTload = self.findChild(QPushButton, 'pushButton_TXTLoad') # Find the button
         self.TXTload.clicked.connect(self.TXTLoadPressed) # Remember to pass the definition/method, not the return value!
 
-        self.BIDDSOpen = self.findChild(QPushButton, 'pushButton_BIDDSOpen') # Find the button
-        self.BIDDSOpen.clicked.connect(self.BIDDSLoadPressed) # Remember to pass the definition/method, not the return value!
-
         self.progressbar = self.findChild(QProgressBar, 'progressBar')
         self.progressbar.setValue(0)
 
+        self.benametext = self.findChild(QLineEdit, 'line_BEName')
+        self.belattext = self.findChild(QLineEdit, 'line_BELat')
+        self.belongtext = self.findChild(QLineEdit, 'line_BELong')
 
         self.show() # Show the GUI
 
@@ -40,8 +42,27 @@ class MainWindow(QDialog):
         self.progressbar.setValue(value)
 
     def TXTLoadPressed(self):
+        config.bename = self.benametext.text()
+        config.belat = self.belattext.text()
+        config.belong = self.belongtext.text()
+
+        if len(config.bename)>0 or len(config.belat)>0 or len(config.belong)>0:
+            try:
+                config.becoord = string2latlon(config.belat, config.belong, 'H% %d% %M')
+            except:
+                config.becoord = QMessageBox.question(self, 'Bullseye Error',
+                                                    "Coordinate format not recognized.\n N/S DD MM.MMMM, E/W DDD MM.MMMM",
+                                                    QMessageBox.Ok)
+                print('Bullseye Lat/Long Error: Input DD MM.MMMM format.')
+                return
+        else:
+            config.becoord = None
+
+
         config.filename = QFileDialog.getOpenFileName(self, 'Open TXT file',
                                             os.path.join(os.getcwd(),'textfiles'), "Text File (*.txt)")
+
+
         if len(config.filename[0]) > 0:
             self.msnpicker = UiMsnPicker(self)
             self.msnpicker.show()
@@ -83,7 +104,7 @@ class Worker(QObject):
 class UiMsnPicker(QDialog):
     def __init__(self,parent=None):
         super(UiMsnPicker, self).__init__(parent) # Call the inherited classes __init__ method
-        uic.loadUi('FlightSearch.ui', self) # Load the .ui file
+        uic.loadUi('fdrsplit.ui', self) # Load the .ui file
 
         self.cbFlights = self.findChild(QComboBox, 'cbFlights') # Find the button
 
@@ -253,6 +274,7 @@ def Parse():
     newfilename = 'Debrief Sheet ' + datetime.datetime.now().strftime('%H%M%S') + '.xlsx'
     newfilepath = os.path.join('output', newfilename)
     shutil.copy('Debrief Sheet Template v3.xlsx', newfilepath)
+    updatefillins(newfilepath)
 
     if config.count > 0:
         dfCombined = pd.concat(dfAllWPNS)

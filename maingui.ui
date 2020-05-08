@@ -6,61 +6,22 @@
    <rect>
     <x>0</x>
     <y>0</y>
-    <width>750</width>
-    <height>320</height>
+    <width>684</width>
+    <height>314</height>
    </rect>
   </property>
   <property name="windowTitle">
-   <string>Debrief Card</string>
+   <string>BIDDS Release Data</string>
   </property>
   <property name="windowIcon">
    <iconset>
-    <normaloff>nuke-mw2-png-5.png</normaloff>nuke-mw2-png-5.png</iconset>
+    <normaloff>patch.ico</normaloff>patch.ico</iconset>
   </property>
-  <widget class="QPushButton" name="pushButton_BIDDSOpen">
-   <property name="geometry">
-    <rect>
-     <x>130</x>
-     <y>70</y>
-     <width>151</width>
-     <height>41</height>
-    </rect>
-   </property>
-   <property name="font">
-    <font>
-     <pointsize>10</pointsize>
-    </font>
-   </property>
-   <property name="text">
-    <string>Open BIDDS</string>
-   </property>
-  </widget>
-  <widget class="QLabel" name="label_3">
-   <property name="geometry">
-    <rect>
-     <x>70</x>
-     <y>160</y>
-     <width>251</width>
-     <height>21</height>
-    </rect>
-   </property>
-   <property name="font">
-    <font>
-     <family>Calibri</family>
-     <pointsize>18</pointsize>
-     <weight>75</weight>
-     <bold>true</bold>
-    </font>
-   </property>
-   <property name="text">
-    <string>2. Create Debrief Card</string>
-   </property>
-  </widget>
   <widget class="QLineEdit" name="line_BEName">
    <property name="geometry">
     <rect>
-     <x>530</x>
-     <y>90</y>
+     <x>180</x>
+     <y>100</y>
      <width>171</width>
      <height>31</height>
     </rect>
@@ -75,8 +36,8 @@
   <widget class="QLabel" name="label_6">
    <property name="geometry">
     <rect>
-     <x>410</x>
-     <y>90</y>
+     <x>60</x>
+     <y>100</y>
      <width>101</width>
      <height>31</height>
     </rect>
@@ -96,8 +57,8 @@
   <widget class="QLineEdit" name="line_BELat">
    <property name="geometry">
     <rect>
-     <x>530</x>
-     <y>130</y>
+     <x>180</x>
+     <y>140</y>
      <width>171</width>
      <height>31</height>
     </rect>
@@ -115,8 +76,8 @@
   <widget class="QLabel" name="label_7">
    <property name="geometry">
     <rect>
-     <x>410</x>
-     <y>130</y>
+     <x>60</x>
+     <y>140</y>
      <width>101</width>
      <height>31</height>
     </rect>
@@ -136,8 +97,8 @@
   <widget class="QLineEdit" name="line_BELong">
    <property name="geometry">
     <rect>
-     <x>530</x>
-     <y>170</y>
+     <x>180</x>
+     <y>180</y>
      <width>171</width>
      <height>31</height>
     </rect>
@@ -155,8 +116,8 @@
   <widget class="QLabel" name="label_8">
    <property name="geometry">
     <rect>
-     <x>410</x>
-     <y>170</y>
+     <x>60</x>
+     <y>180</y>
      <width>101</width>
      <height>31</height>
     </rect>
@@ -176,8 +137,8 @@
   <widget class="QLabel" name="label_9">
    <property name="geometry">
     <rect>
-     <x>410</x>
-     <y>40</y>
+     <x>60</x>
+     <y>50</y>
      <width>291</width>
      <height>31</height>
     </rect>
@@ -194,57 +155,12 @@
     <string>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p align=&quot;center&quot;&gt;&lt;span style=&quot; text-decoration: underline;&quot;&gt;Input Bullseye Data&lt;/span&gt;&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string>
    </property>
   </widget>
-  <widget class="QPushButton" name="pushButton_TXTLoad">
-   <property name="geometry">
-    <rect>
-     <x>130</x>
-     <y>190</y>
-     <width>151</width>
-     <height>41</height>
-    </rect>
-   </property>
-   <property name="font">
-    <font>
-     <family>MS Shell Dlg 2</family>
-     <pointsize>10</pointsize>
-     <weight>50</weight>
-     <bold>false</bold>
-    </font>
-   </property>
-   <property name="toolTip">
-    <string>Copys FDR and DRD File to BIDDS Folder, Open BIDDS</string>
-   </property>
-   <property name="text">
-    <string>Select TXT File</string>
-   </property>
-  </widget>
-  <widget class="QLabel" name="label_4">
-   <property name="geometry">
-    <rect>
-     <x>70</x>
-     <y>30</y>
-     <width>261</width>
-     <height>21</height>
-    </rect>
-   </property>
-   <property name="font">
-    <font>
-     <family>Calibri</family>
-     <pointsize>18</pointsize>
-     <weight>75</weight>
-     <bold>true</bold>
-    </font>
-   </property>
-   <property name="text">
-    <string>1. Convert FDR to Text File</string>
-   </property>
-  </widget>
   <widget class="QProgressBar" name="progressBar">
    <property name="geometry">
     <rect>
-     <x>50</x>
-     <y>270</y>
-     <width>671</width>
+     <x>40</x>
+     <y>250</y>
+     <width>601</width>
      <height>23</height>
     </rect>
    </property>
@@ -252,6 +168,115 @@
     <number>24</number>
    </property>
   </widget>
+  <widget class="QFrame" name="frame">
+   <property name="geometry">
+    <rect>
+     <x>40</x>
+     <y>40</y>
+     <width>341</width>
+     <height>191</height>
+    </rect>
+   </property>
+   <property name="frameShape">
+    <enum>QFrame::Panel</enum>
+   </property>
+   <property name="frameShadow">
+    <enum>QFrame::Raised</enum>
+   </property>
+  </widget>
+  <widget class="QLabel" name="label_4">
+   <property name="geometry">
+    <rect>
+     <x>560</x>
+     <y>10</y>
+     <width>81</width>
+     <height>21</height>
+    </rect>
+   </property>
+   <property name="font">
+    <font>
+     <family>Calibri</family>
+     <pointsize>12</pointsize>
+     <weight>50</weight>
+     <bold>false</bold>
+    </font>
+   </property>
+   <property name="text">
+    <string>version 0.1</string>
+   </property>
+  </widget>
+  <widget class="QFrame" name="frame_2">
+   <property name="geometry">
+    <rect>
+     <x>400</x>
+     <y>40</y>
+     <width>241</width>
+     <height>191</height>
+    </rect>
+   </property>
+   <property name="frameShape">
+    <enum>QFrame::Panel</enum>
+   </property>
+   <property name="frameShadow">
+    <enum>QFrame::Raised</enum>
+   </property>
+   <widget class="QLabel" name="label_3">
+    <property name="geometry">
+     <rect>
+      <x>20</x>
+      <y>30</y>
+      <width>211</width>
+      <height>21</height>
+     </rect>
+    </property>
+    <property name="font">
+     <font>
+      <family>Calibri</family>
+      <pointsize>18</pointsize>
+      <weight>75</weight>
+      <bold>true</bold>
+     </font>
+    </property>
+    <property name="text">
+     <string>Create Debrief Card</string>
+    </property>
+   </widget>
+   <widget class="QPushButton" name="pushButton_TXTLoad">
+    <property name="geometry">
+     <rect>
+      <x>50</x>
+      <y>90</y>
+      <width>151</width>
+      <height>41</height>
+     </rect>
+    </property>
+    <property name="font">
+     <font>
+      <family>MS Shell Dlg 2</family>
+      <pointsize>10</pointsize>
+      <weight>50</weight>
+      <bold>false</bold>
+     </font>
+    </property>
+    <property name="toolTip">
+     <string>Copys FDR and DRD File to BIDDS Folder, Open BIDDS</string>
+    </property>
+    <property name="text">
+     <string>Select TXT File</string>
+    </property>
+   </widget>
+  </widget>
+  <zorder>frame_2</zorder>
+  <zorder>frame</zorder>
+  <zorder>line_BEName</zorder>
+  <zorder>label_6</zorder>
+  <zorder>line_BELat</zorder>
+  <zorder>label_7</zorder>
+  <zorder>line_BELong</zorder>
+  <zorder>label_8</zorder>
+  <zorder>label_9</zorder>
+  <zorder>progressBar</zorder>
+  <zorder>label_4</zorder>
  </widget>
  <resources/>
  <connections/>

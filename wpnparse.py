@@ -1,0 +1,470 @@
+import pandas as pd
+from utils import *
+
+def jdamparse(wpn):
+    if wpn['Tail Year'] == '0':
+        wpn['Tail Year'] = '00'
+    wpn['Tail'] = wpn['Tail Year'][1] + '0' + "{:02d}".format(int(wpn['Tail Number']))
+    # print(wpn['Tail Number'])
+
+    if wpn['MSN Planned TGT'] == 'True':
+        wpn['Dest'] = wpn['LP DT Num']
+    else:
+        if wpn['LP DT Num'].isnumeric():
+            wpn['Dest'] = "D" + str(wpn['LP DT Num'])
+        else:
+            wpn['Dest'] = "DS" + wpn['Mode'].replace('Static', 'STAT').replace('Continuous', 'CONT')
+
+    # print(wpn['Dest'])
+
+    wpn['TOR'] = pd.to_datetime(wpn['Time (UTC)'] + ' ' + wpn['Date'])
+    # print(wpn['TOR'])
+
+    if wpn['IZ Status'] == 'Inside':
+        wpn['LARstatus'] = 'ZONE'
+        wpn['TOF'] = wpn['IZ TOF']
+    elif wpn['IR Status'] == 'RANGE':
+        wpn['LARstatus'] = 'IR'
+        wpn['TOF'] = wpn['IR TOF']
+    else:
+        wpn['LARstatus'] = 'UNK'
+        wpn['TOF'] = 0
+
+    if wpn['TOF'] != 0:
+        try:
+            wpn['TOF'] = round(float(wpn['TOF'].replace('  sec', '').replace('+ ', '')))
+        except:
+            print('TOF Parse Error- ' + wpn['TOF'])
+
+    wpn['TOT'] = wpn['TOR'] + pd.to_timedelta(str(wpn['TOF']) + 's')
+    # print(wpn['TOR'])
+    # print(wpn['TOF'])
+    # print(wpn['TOT'])
+
+    # print(wpn['WPN Type'])
+    if '0x00' in wpn['TGT Name']:
+        wpn['TGT Name'] = ''
+    try:
+        wpn['ALT'] = str(round(float(wpn['Altitude'].replace('  feet', '').replace('+ ', ''))))
+    except:
+        wpn['ALT'] = 'ERR'
+    #print(wpn['ALT'])
+
+    try:
+        wpn['LAT'] = wpn['Latitude'].replace('  deg', '').replace(':', ' ').replace('N 0', "N ").replace('S 0', "S ")
+    except:
+        wpn['LAT'] = 'ERR'
+    try:
+        wpn['LONG'] = wpn['Longitude'].replace('  deg', '').replace(':', ' ')
+    except:
+        wpn['LONG'] = 'ERR'
+
+    # print(wpn['LAT'])
+    # print(wpn['LONG'])
+
+    try:
+        wpn['TGT LAT'] = wpn['TGT LAT'].replace('  deg', '').replace(':', ' ').replace('N 0', "N ").replace('S 0', "S ")
+    except:
+        wpn['TGT LAT'] = 'ERR'
+    try:
+        wpn['TGT LONG'] = wpn['TGT LONG'].replace('  deg', '').replace(':', ' ')
+    except:
+        wpn['TGT LONG'] = 'ERR'
+
+    # print(wpn['TGT LAT'])
+    # print(wpn['TGT LONG'])
+    try:
+        wpn['TGT ELEV'] = float(wpn['TGT Altitude'].replace('  meters', '').replace('+ ', '').replace('- ', '')) * 3.28084
+        if "- " in wpn['TGT Altitude']:
+            wpn['TGT ELEV'] = "-" + str(round(wpn['TGT ELEV'])) + "' " + wpn['TGT Alt Ref']
+        else:
+            wpn['TGT ELEV'] = str(round(wpn['TGT ELEV'])) + "' " + wpn['TGT Alt Ref']
+    except:
+        wpn['TGT ELEV'] = 'ERR'
+
+    # print(wpn['TGT ELEV'])
+    wpn['BULL'] = bullcalculate(wpn['TGT LAT'],wpn['TGT LONG'])
+
+    try:
+        wpn['GTRK'] = round(float(wpn['GND Trk Angle'].replace('+ ', '').replace('- ', '').replace('  deg','')))
+        if '-' in wpn['GND Trk Angle']:
+            wpn['GTRK'] = 360 - wpn['GTRK']
+    except:
+        wpn['GTRK'] = 'ERR'
+
+    wpn['LS'] = wpn['Dev ID'].replace('P', '')
+    # print(wpn['LS'])
+
+    wpn['WPN Code']= wpn['WPN Type']
+    try:
+        wpn['WPN Type'] = wpn['Store Description'].replace('GBU-','').replace('(V)','v')
+    except:
+        wpn['WPN Type'] = wpn['WPN Code']
+
+    wpn['GS'] = round(float(wpn['GND Speed'].replace('  ft/sec', '')) * 0.592484)
+    # print(wpn['GS'])
+
+    wpn['Delay'] = ''
+    try:
+        if wpn['Func at Impact'] == 'True':
+            wpn['Delay'] = "IMP"
+        else:
+            if wpn['Func on Proximity'] == 'True':
+                wpn['Delay'] = 'PROX'
+            else:
+                if wpn['Func on Time Aft Impact'] == 'True':
+                    wpn['Delay'] = 'DEL'
+                else:
+                    if wpn['Function on Void'] in wpn.keys():
+                        wpn['Delay'] = 'VOID' + str(wpn['Void Number'])
+                    else:
+                        if wpn['Function on Void'] in wpn.keys():
+                            if wpn['Function on Void'] == 'TRUE' and wpn['Delay'] == '':
+                                wpn['Delay'] = 'VOID' + str(wpn['Void Number'])
+    except:
+        pass
+
+
+    return wpn
+def wcmdparse(wpn):
+    if wpn['Tail Year'] == '0':
+        wpn['Tail Year'] = '00'
+    wpn['Tail'] = wpn['Tail Year'][1] + '0' + "{:02d}".format(int(wpn['Tail Number']))
+
+    if wpn['Direct Target'] == 'False':
+        wpn['Dest'] = wpn['LP DT Number']
+    else:
+        if wpn['LP DT Number'].isnumeric():
+            wpn['Dest'] = "D" + str(wpn['LP DT Number'])
+        else:
+            wpn['Dest'] = "DS" + wpn['Mode'].replace('Static', 'STAT').replace('Continuous', 'CONT')
+
+    wpn['TOR'] = pd.to_datetime(wpn['Time (UTC)'] + ' ' + wpn['Date'])
+
+    if wpn['IR Status'] == 'Inside':
+        wpn['LARstatus'] = 'LAR'
+    else:
+        wpn['LARstatus'] = 'UNK'
+
+    wpn['TOF'] = ''  # Does not exist
+    wpn['TOT'] = ''  # Unable to calculate with no TOF
+
+    wpn['WPN Type'] = wpn['Store Description'].replace('CBU-', '')
+
+    try:
+        wpn['ALT'] = str(round(float(wpn['Altitude'].replace('  feet', '').replace('+ ', ''))))
+    except:
+        wpn['ALT'] = 'ERR'
+
+    try:
+        wpn['LAT'] = wpn['Latitude'].replace('  deg', '').replace(':', ' ').replace('N 0', "N ").replace('S 0', "S ")
+    except:
+        wpn['LAT'] = 'ERR'
+    try:
+        wpn['LONG'] = wpn['Longitude'].replace('  deg', '').replace(':', ' ')
+    except:
+        wpn['LONG'] = 'ERR'
+
+    try:
+        wpn['TGT LAT'] = wpn['Target Latitude'].replace('  deg', '').replace(':', ' ').replace('N 0', "N ").replace('S 0', "S ")
+    except:
+        wpn['TGT LAT'] = 'ERR'
+    try:
+        wpn['TGT LONG'] = wpn['Target Longitude'].replace('  deg', '').replace(':', ' ')
+    except:
+        wpn['TGT LONG'] = 'ERR'
+
+    try:
+        wpn['TGT ELEV'] = float(wpn['Target Altitude'].replace('  meters', '').replace('+ ', '')) * 3.28084
+        wpn['TGT ELEV'] = str(round(wpn['TGT ELEV'])) + "' " + wpn['Target Alt Ref']
+    except:
+        wpn['TGT ELEV'] = 'ERR'
+    wpn['BULL'] = bullcalculate(wpn['TGT LAT'], wpn['TGT LONG'])
+    wpn['LS'] = wpn['Device ID'].replace('P', '')
+    wpn['GS'] = round(float(wpn['Ground Speed'].replace('  ft/sec', '')) * 0.592484)
+    wpn['Delay'] = wpn['Fuze Option'].replace('Prox_Fuzing', 'PROX')
+
+    return wpn
+
+def jassmparse(wpn):
+    if wpn['Tail Year'] == '0':
+        wpn['Tail Year'] = '00'
+    wpn['Tail'] = wpn['Tail Year'][1] + '0' + "{:02d}".format(int(wpn['Tail Number']))
+    #print(wpn['Tail'])
+
+    wpn['LS'] = wpn['Device ID'].replace('P', '').replace(' ','')
+    #print(wpn['LS'])
+
+    try:
+        wpn['LAT'] = wpn['Latitude'].replace('  deg', '').replace(':', ' ').replace('N 0', "N ").replace('S 0', "S ")
+    except:
+        wpn['LAT'] = 'ERR'
+    try:
+        wpn['LONG'] = wpn['Longitude'].replace('  deg', '').replace(':', ' ')
+    except:
+        wpn['LONG'] = 'ERR'
+    try:
+        wpn['ALT'] = str(round(float(wpn['Altitude'].replace('  feet', '').replace('+ ', ''))))
+    except:
+        wpn['ALT'] = 'ERR'
+
+    #print(wpn['LAT'])
+    #print(wpn['LONG'])
+    #print(wpn['ALT'])
+
+    try:
+        wpn['GTRK'] = round(float(wpn['Ground Track Angle'].replace('+ ', '').replace('- ', '').replace('  deg', '')))
+    except:
+        wpn['GTRK'] = 'ERR'
+    #print(wpn['GTRK'])
+
+    wpn['GS'] = round(float(wpn['Ground Speed'].replace('  ft/sec', '')) * 0.592484)
+    #print(wpn['GS'])
+
+    wpn['PrimeNav'] = wpn['Prime Nav System']
+    #print(wpn['PrimeNav'])
+
+    if wpn['IZ Status'] == 'Inside':
+        wpn['LARstatus'] = 'ZONE'
+    elif wpn['IR Status'] == 'RANGE':
+        wpn['LARstatus'] = 'IR'
+    else:
+        wpn['LARstatus'] = 'UNK'
+    #print(wpn['LARstatus'])
+
+    try:
+        if wpn['Mission Planned TGT'] == 'True':
+            wpn['Dest'] = wpn['LP DT Number']
+        else:
+            if wpn['LP DT Number'].isnumeric():
+                wpn['Dest'] = "D" + str(wpn['LP DT Number'])
+    except:
+        try:
+            if wpn['Mission Planned TGT'] == 'True':
+                wpn['Dest'] = wpn['LP DT Num']
+            else:
+                if wpn['LP DT Num'].isnumeric():
+                    wpn['Dest'] = "D" + str(wpn['LP DT Num'])
+        except:
+            wpn['Dest'] = ''
+    #print(wpn['Dest'])
+
+    wpn['TOR'] = pd.to_datetime(wpn['Time (UTC)'] + ' ' + wpn['Date'])
+    wpn['TOF'] = ''
+    wpn['TOT'] = ''
+
+    #print(wpn['TOR'])
+    #print(wpn['TOF'])
+    #print(wpn['TOT'])
+
+    try:
+        if wpn['Variant Type A'] == 'True':
+            wpn['WPN Type'] = 'M1'
+        if wpn['Variant Type B'] == 'True':
+            wpn['WPN Type'] = 'M2'
+    except:
+        print('Error Jassm type: ' + str(wpn['Record Number']))
+        #print(wpn['WPN Type'])
+
+    wpn['TGT LAT'] = ''
+    wpn['TGT LONG'] = ''
+    wpn['TGT ELEV'] = ''
+    wpn['TGT Name'] = ''
+
+    wpn['BULL'] = bullcalculate(wpn['TGT LAT'], wpn['TGT LONG'])
+    #print(wpn['TGT LAT'])
+    #print(wpn['TGT LONG'])
+    #print(wpn['TGT ELEV'])
+
+    wpn['Delay'] = ''
+    #print(wpn['Delay'])
+    return wpn
+def maldparse(wpn):
+    if wpn['Tail Year'] == '0':
+        wpn['Tail Year'] = '00'
+    wpn['Tail'] = wpn['Tail Year'][1] + '0' + "{:02d}".format(int(wpn['Tail Number']))
+    #print(wpn['Tail'])
+
+    wpn['LS'] = wpn['Device ID'].replace('P', '')
+    #print(wpn['LS'])
+
+    try:
+        wpn['LAT'] = wpn['Latitude'].replace('  deg', '').replace(':', ' ').replace('N 0', "N ").replace('S 0', "S ")
+    except:
+        wpn['LAT'] = 'ERR'
+    try:
+        wpn['LONG'] = wpn['Longitude'].replace('  deg', '').replace(':', ' ')
+    except:
+        wpn['LONG'] = 'ERR'
+    try:
+        wpn['ALT'] = str(round(float(wpn['Altitude'].replace('  feet', '').replace('+ ', ''))))
+    except:
+        wpn['ALT'] = 'ERR'
+
+    #print(wpn['LAT'])
+    #print(wpn['LONG'])
+    #print(wpn['ALT'])
+
+    try:
+        wpn['GTRK'] = round(float(wpn['Ground Track Angle'].replace('+ ', '').replace('- ', '').replace('  deg', '')))
+    except:
+        wpn['GTRK'] = 'ERR'
+    #print(wpn['GTRK'])
+
+    wpn['GS'] = round(float(wpn['Ground Speed'].replace('+ ', '').replace('  ft/sec', '')) * 0.592484)
+    #print(wpn['GS'])
+
+    wpn['PrimeNav'] = wpn['Prime Nav System']
+    #print(wpn['PrimeNav'])
+
+    if wpn['IZ Status'] == 'Inside':
+        wpn['LARstatus'] = 'ZONE'
+    elif wpn['IR Status'] == 'RANGE':
+        wpn['LARstatus'] = 'IR'
+    else:
+        wpn['LARstatus'] = 'UNK'
+    #print(wpn['LARstatus'])
+
+    if wpn['Targeting Mode'] == 'Preplanned':
+        wpn['Dest'] = wpn['LPT ADM Number']
+    else:
+        if wpn['LPT ADM Number'].isnumeric():
+            wpn['Dest'] = "D" + str(wpn['LPT ADM Number'])
+
+    #print(wpn['Dest'])
+
+    wpn['TOR'] = pd.to_datetime(wpn['Time (UTC)'] + ' ' + wpn['Date'])
+    wpn['TOF'] = ''
+    wpn['TOT'] = ''
+
+    #print(wpn['TOR'])
+    #print(wpn['TOF'])
+    #print(wpn['TOT'])
+
+    wpn['WPN Type'] = wpn['Weapon Type']
+    #print(wpn['WPN Type'])
+
+    try:
+        wpn['TGT LAT'] = wpn['EP Latitude'].replace('  deg', '').replace(':', ' ').replace('N 0', "N ").replace('S 0',
+                                                                                                                "S ")
+    except:
+        wpn['TGT LAT'] = 'ERR'
+    try:
+        wpn['TGT LONG'] = wpn['EP Longitude'].replace('  deg', '').replace(':', ' ')
+    except:
+        wpn['TGT LONG'] = 'ERR'
+    try:
+        wpn['TGT ELEV'] = str(round(float(wpn['EP Elevation'].replace('  feet', '').replace('+ ', '')))) + "'"
+    except:
+        wpn['TGT ELEV'] = 'ERR'
+    wpn['BULL'] = bullcalculate(wpn['TGT LAT'], wpn['TGT LONG'])
+    #print(wpn['TGT LAT'])
+    #print(wpn['TGT LONG'])
+    #print(wpn['TGT ELEV'])
+
+    if wpn['Ingress Payload Control'] == "Payload Off (Decoy/Jammer)":
+        wpn['INGRESS'] = 'OFF'
+    else:
+        wpn['INGRESS'] = wpn['Ingress Payload Control']
+
+    if wpn['Orbit Payload Control'] == "Payload Off (Decoy/Jammer)":
+        wpn['ORBIT'] = 'OFF'
+    else:
+        wpn['ORBIT'] = wpn['Orbit Payload Control']
+
+    wpn['Delay'] = 'I:' + str(wpn['INGRESS']) + "/O:" + str(wpn['ORBIT'])
+    #print(wpn['Delay'])
+    return wpn
+def gwdparse(wpn):
+    if wpn['Tail Year'] == '0':
+        wpn['Tail Year'] = '00'
+    wpn['Tail'] = wpn['Tail Year'][1] + '0' + "{:02d}".format(int(wpn['Tail Number']))
+
+    if wpn['Type Of Target'] == 'Mission_Planned':
+        wpn['Dest'] = wpn['Target Identifier']
+    else:
+        wpn['Dest'] = wpn['Target Identifier']  # Continuous or Static?
+
+    wpn['TOR'] = pd.to_datetime(wpn['Time (UTC)'] + ' ' + wpn['Date'])
+
+    # wpn['LARstatus']  = 'ZONE'  #Set as FCI From mission Event
+
+    if wpn['Weapon Time Of Fall'] != 0:
+        try:
+            wpn['TOF'] = round(float(wpn['Weapon Time Of Fall'].replace('  SEC', "")))
+        except:
+            print('TOF Parse Error- ' + wpn['TOF'])
+            wpn['TOF'] = 0
+
+    wpn['TOT'] = wpn['TOR'] + pd.to_timedelta(str(wpn['TOF']) + 's')
+
+    wpn['WPN Type'] = "B" + "{:02d}".format(int(wpn['Bomb Type']))
+
+    try:
+        wpn['ALT'] = str(round(float(wpn['Aircraft Altitude'].replace('  feet', '').replace('+ ', ''))))
+    except:
+        wpn['ALT'] = 'ERR'
+
+    try:
+        wpn['LAT'] = wpn['Aircraft Latitude'].replace('  deg', '').replace(':', ' ').replace('N 0', "N ").replace('S 0', "S ")
+    except:
+        wpn['LAT'] = 'ERR'
+    try:
+        wpn['LONG'] = wpn['Aircraft Longitude'].replace('  deg', '').replace(':', ' ')
+    except:
+        wpn['LONG'] = 'ERR'
+
+
+
+    try:
+        wpn['TGT LAT'] = wpn['Target Latitude'].replace('  deg', '').replace(':', ' ').replace('N 0', "N ").replace('S 0', "S ")
+    except:
+        wpn['TGT LAT'] = 'ERR'
+    try:
+        wpn['TGT LONG'] = wpn['Target Longitude'].replace('  deg', '').replace(':', ' ')
+    except:
+        wpn['TGT LONG'] = 'ERR'
+
+    try:
+        wpn['TGT ELEV'] = float(wpn['Target Elevation'].replace('  feet', '').replace('+ ', ''))
+        wpn['TGT ELEV'] = str(round(wpn['TGT ELEV'])) + "' " + wpn['Elevation Ref']
+    except:
+        wpn['TGT LAT'] = 'ERR'
+
+    wpn['BULL'] = bullcalculate(wpn['TGT LAT'], wpn['TGT LONG'])
+
+    try:
+        wpn['GTRK'] = round(float(wpn['Ground Track'].replace('+ ', '').replace('- ', '').replace('  deg','')))
+        if '-' in wpn['Ground Track']:
+            wpn['GTRK'] = 360 - wpn['GTRK']
+    except:
+        wpn['GTRK'] = 'ERR'
+
+    if wpn['RIU Present'] == 'True':
+        wpn['LS'] = wpn['Master Location'].replace('Internal', 'INT').replace('External', 'EXT')
+    else:
+        wpn['LS'] = wpn['Master Location']
+
+
+    wpn['GS'] = round(float(wpn['Ground Speed'].replace('  ft/sec', '').replace('+ ', '')) * 0.592484)
+
+    wpn['Delay'] = ""
+    if wpn['First Sample Valid'] == 'True':
+        wpn['FOM'] = wpn['FOM First Sample']
+    elif wpn['Second Sample Valid'] == 'True':
+        wpn['FOM'] = wpn['FOM Second Sample']
+    else:
+        wpn['FOM'] = 'ERR'
+    try:
+        BuffersN = float(evn['Trackball Buffer North'].replace('  feet', '').replace('+ ', '').replace('- ', ''))
+        BuffersE = float(evn['Trackball Buffer East'].replace('  feet', '').replace('+ ', '').replace('- ', ''))
+        if "- " in evn['Trackball Buffer North']:
+            BuffersN = BuffersN * -1
+        if "- " in evn['Trackball Buffer East']:
+            BuffersE = BuffersE * -1
+        evn['Buffers'] = round(Vector2Polar(BuffersN,BuffersE)[1])
+    except:
+        evn['Buffers'] = "ERR"
+
+
+    return wpn
