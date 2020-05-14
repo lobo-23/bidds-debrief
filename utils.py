@@ -5,7 +5,9 @@ import pandas as pd
 from openpyxl import load_workbook
 import numpy as np
 import config
-
+import pynmea2
+import subprocess
+import os
 
 def Vector2Polar(N,E):
     Mag = np.sqrt(N**2 + E**2)
@@ -128,6 +130,9 @@ def updatefillins(filename):
         for title, coord in writer.book.defined_names['BELong'].destinations:
             ws = writer.book[title]
             ws[coord] = str(config.belong)
+        for title, coord in writer.book.defined_names['cs'].destinations:
+            ws = writer.book[title]
+            ws[coord] = str(config.csname)
 
         # copy existing sheets
         writer.sheets = {ws.title:ws for ws in writer.book.worksheets}
@@ -138,3 +143,33 @@ def updatefillins(filename):
     # save the workbook
     writer.save()
 
+def to_gpsnmea(df,filename):
+    df = df.rename(columns={"Time (UTC)": "TIME"})
+    df['LAT'] = df['LAT'].str.replace(" ", '')
+    df['LONG'] = df['LONG'].str.replace(" ", '')
+    filename = filename.replace('Debrief Card','GPS Trail').replace('xlsx','gps')
+    gpsfile = open(filename, 'a')
+    for index, row in df.iterrows():
+        mvar = float(row.THDG) - float(row.MHDG)
+        if mvar < 0:
+            mvarH = 'W'
+        else:
+            mvarH = 'E'
+        GS = f'{row.GS:05.1f}'
+        GTRK = f'{row.GTRK:05.1f}'
+        MHDG = f'{row.MHDG:05.1f}'
+        dtime = row.TIME.strftime('%H%M%S')
+        ddate = row.TIME.strftime('%d%m%y')
+        alt = str(round(float(row.ALT) * 0.3048))
+
+        RMC = pynmea2.ZDA('GP', 'RMC', (dtime, 'A', row.LAT[1:], row.LAT[0], row.LONG[1:], row.LONG[0], GS, GTRK, ddate, f'{mvar:05.1f}', mvarH))
+        GGA = pynmea2.GGA('GP', 'GGA', (dtime, row.LAT[1:], row.LAT[0], row.LONG[1:], row.LONG[0], '1', '', '', alt, 'M', '', '', '', '0'))
+        VTG = pynmea2.GGA('GP', 'VTG', (GTRK, 'T', MHDG, 'M', f'{row.GS:06.2f}', 'N', '', 'K'))
+
+        gpsfile.write(str(RMC) + "\n")
+        gpsfile.write(str(GGA) + "\n")
+        gpsfile.write(str(VTG) + "\n")
+    gpsfile.close()
+    #os.system('cmd .\output\GPSBabel\gpsbabel -i nmea -f ' + filename + ' -x interpolate,time=10 -o nmea -F "testtrack.gps"')
+    subprocess.Popen(r'explorer /select,'+ filename )
+    os.startfile(filename, 'open')

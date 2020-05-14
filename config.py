@@ -1,0 +1,27 @@
+
+global filename
+global msnData
+global ranges
+
+global msndates
+
+global dfMsnEvents
+global count
+
+global ProgressMsnEvent
+global events_available
+global releases_available
+global parse_pending
+
+global jdam
+global gwd
+global wcmd
+global jassm
+global mald
+
+global bename
+global belat
+global belong
+global becoord
+global csname
+global defaults

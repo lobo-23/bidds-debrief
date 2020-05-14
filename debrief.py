@@ -12,6 +12,8 @@ from msnparse import *
 from LatLon23 import string2latlon
 from pyproj import _datadir, datadir
 import config
+import json
+
 
 class External(QThread):
     countChanged = pyqtSignal(int)
@@ -36,6 +38,16 @@ class MainWindow(QDialog):
         self.belattext = self.findChild(QLineEdit, 'line_BELat')
         self.belongtext = self.findChild(QLineEdit, 'line_BELong')
 
+        self.csname = self.findChild(QLineEdit, 'line_CS')
+        try:
+            with open('defaults.json') as f:
+                config.defaults = json.load(f)
+                self.benametext.setText(config.defaults['BEname'])
+                self.belattext.setText(config.defaults['BElat'])
+                self.belongtext.setText(config.defaults['BElon'])
+                self.csname.setText(config.defaults['CS'])
+        except:
+            pass
         self.show() # Show the GUI
 
     def onCountChanged(self, value):
@@ -45,6 +57,16 @@ class MainWindow(QDialog):
         config.bename = self.benametext.text()
         config.belat = self.belattext.text()
         config.belong = self.belongtext.text()
+        config.csname = self.csname.text()
+        try:
+            with open('defaults.json', 'w') as f:
+                config.defaults['BEname'] = config.bename
+                config.defaults['BElat'] = config.belat
+                config.defaults['BElon'] = config.belong
+                config.defaults['CS'] = ''.join([i for i in config.csname if not i.isdigit()])
+                json.dump(config.defaults,f)
+        except:
+            pass
 
         if len(config.bename)>0 or len(config.belat)>0 or len(config.belong)>0:
             try:
@@ -58,9 +80,17 @@ class MainWindow(QDialog):
         else:
             config.becoord = None
 
+        if len(config.csname)<1:
+            config.csname = QMessageBox.question(self, 'Callsign Error',
+                                                  "Please enter a Callsign",
+                                                  QMessageBox.Ok)
+            return
+
 
         config.filename = QFileDialog.getOpenFileName(self, 'Open TXT file',
-                                            os.path.join(os.getcwd(),'textfiles'), "Text File (*.txt)")
+                                            os.path.join(os.path.join(os.environ['USERPROFILE']), 'Desktop'), "Text File (*.txt)")
+        #config.filename = QFileDialog.getOpenFileName(self, 'Open TXT file',
+         #                                   os.path.join(os.getcwd(),'textfiles'), "Text File (*.txt)")
 
 
         if len(config.filename[0]) > 0:
@@ -73,8 +103,6 @@ class MainWindow(QDialog):
 
 
     def BIDDSLoadPressed(self):
-        # This is executed when the button is pressed
-        print('BIDDSLoadPressed')
         copyDirectory(r'.\Files\BIDDS', "C:\BIDDS")
         os.startfile('C:\BIDDS\BIDDS.exe')
 
@@ -121,16 +149,13 @@ class UiMsnPicker(QDialog):
 
 
     def SelectFlightPressed(self):
-        print('Select Flight Pressed')
-        self.FlightCount.setText(print(self.cbFlights.currentIndex()))
+        #self.FlightCount.setText(print(self.cbFlights.currentIndex()))
         idx = self.cbFlights.currentIndex()
 
 
         i = int(config.ranges[idx][0])
         j = int(config.ranges[idx][1])
         config.msnData = config.msnData[i:j]
-        print(i)
-        print(j)
 
 
         config.parse_pending = threading.Event()
@@ -271,9 +296,9 @@ def Parse():
     config.ProgressMsnEvent = 90
     print('\r{}% done...'.format(config.ProgressMsnEvent), end='', flush=True)
 
-    newfilename = 'Debrief Sheet ' + datetime.datetime.now().strftime('%H%M%S') + '.xlsx'
+    newfilename = config.csname + ' Debrief Card ' + datetime.datetime.now().strftime('%H%M%S') + '.xlsx'
     newfilepath = os.path.join('output', newfilename)
-    shutil.copy('Debrief Sheet Template v3.xlsx', newfilepath)
+    shutil.copy('Debrief Sheet Template v4.xlsx', newfilepath)
     updatefillins(newfilepath)
 
     if config.count > 0:
@@ -284,6 +309,7 @@ def Parse():
             sheetname = df.loc[0, 'wpn']
             append_df_to_excel(newfilepath,df,sheet_name=sheetname,startrow=0, index=False)
     append_df_to_excel(newfilepath, config.dfMsnEvents, sheet_name="Timestamps", startrow=0, index=False)
+    to_gpsnmea(config.dfMsnEvents,newfilepath)
     config.ProgressMsnEvent = 100
     print('\r{}% done...'.format(config.ProgressMsnEvent), end='', flush=True)
     elapsed = timeit.default_timer() - start_time

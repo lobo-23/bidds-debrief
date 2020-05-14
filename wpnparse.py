@@ -11,9 +11,24 @@ def jdamparse(wpn):
         wpn['Dest'] = wpn['LP DT Num']
     else:
         if wpn['LP DT Num'].isnumeric():
-            wpn['Dest'] = "D" + str(wpn['LP DT Num'])
-        else:
-            wpn['Dest'] = "DS" + wpn['Mode'].replace('Static', 'STAT').replace('Continuous', 'CONT')
+            if wpn['LP DT Num'] == '127':
+                if 'Continuous' in wpn['TGP Mode']:
+                    wpn['Dest'] = "DS-Cont" + str(wpn['Stream operation']).replace('True',' ON').replace('False',' OFF')
+                elif 'Static' in wpn['TGP Mode']:
+                    wpn['Dest'] = "DS-Stat"
+                elif 'Predict' in wpn['TGP Mode']:
+                    wpn['Dest'] = "DS-Pred" + str(wpn['Stream operation']).replace('True',' ON').replace('False',' OFF')
+            else:
+                wpn['Dest'] = "D" + str(wpn['LP DT Num'])
+                if 'Updated' in wpn['TGP Mode']:
+                    if 'Continuous' in wpn['TGP Mode']:
+                        wpn['Dest'] = wpn['Dest'] + "-Cont" + str(wpn['Stream operation']).replace('True',
+                                                                                                        ' ON').replace(
+                            'False', ' OFF')
+                    elif 'Predict' in wpn['TGP Mode']:
+                        wpn['Dest'] = wpn['Dest'] + "-Pred" + str(wpn['Stream operation']).replace('True',
+                                                                                                        ' ON').replace(
+                            'False', ' OFF')
 
     # print(wpn['Dest'])
 
@@ -23,11 +38,11 @@ def jdamparse(wpn):
     if wpn['IZ Status'] == 'Inside':
         wpn['LARstatus'] = 'ZONE'
         wpn['TOF'] = wpn['IZ TOF']
-    elif wpn['IR Status'] == 'RANGE':
-        wpn['LARstatus'] = 'IR'
+    elif wpn['IR Status'] == 'Inside':
+        wpn['LARstatus'] = 'RANGE'
         wpn['TOF'] = wpn['IR TOF']
     else:
-        wpn['LARstatus'] = 'UNK'
+        wpn['LARstatus'] = 'UNACHIEV'
         wpn['TOF'] = 0
 
     if wpn['TOF'] != 0:
@@ -98,6 +113,13 @@ def jdamparse(wpn):
     wpn['WPN Code']= wpn['WPN Type']
     try:
         wpn['WPN Type'] = wpn['Store Description'].replace('GBU-','').replace('(V)','v')
+        if wpn['WPN Type'] == '38' and wpn['Laser Kit Good'] == 'True':
+            wpn['WPN Type'] = '54'
+            Laser = wpn['Laser Code 1'] + wpn['Laser Code 2'] + wpn['Laser Code 3']+ wpn['Laser Code 4']
+            if Laser == '0000':
+                wpn['LS'] = wpn['LS']+ ' No LSR'
+            else:
+                wpn['LS'] = wpn['LS'] + ' L' + Laser
     except:
         wpn['WPN Type'] = wpn['WPN Code']
 
@@ -114,6 +136,10 @@ def jdamparse(wpn):
             else:
                 if wpn['Func on Time Aft Impact'] == 'True':
                     wpn['Delay'] = 'DEL'
+                    if wpn['Integer'] == '+  313  microsec':
+                        wpn['Delay'] = '5ms'
+                    elif wpn['Integer'] == '+  938  microsec':
+                        wpn['Delay'] = '15ms'
                 else:
                     if wpn['Function on Void'] in wpn.keys():
                         wpn['Delay'] = 'VOID' + str(wpn['Void Number'])
@@ -123,7 +149,7 @@ def jdamparse(wpn):
                                 wpn['Delay'] = 'VOID' + str(wpn['Void Number'])
     except:
         pass
-
+    wpn['Delay'] = wpn['Delay'] + '  ' + wpn['Impact Angle'].replace('  deg','IA')
 
     return wpn
 def wcmdparse(wpn):
@@ -227,7 +253,7 @@ def jassmparse(wpn):
     if wpn['IZ Status'] == 'Inside':
         wpn['LARstatus'] = 'ZONE'
     elif wpn['IR Status'] == 'RANGE':
-        wpn['LARstatus'] = 'IR'
+        wpn['LARstatus'] = 'RANGE'
     else:
         wpn['LARstatus'] = 'UNK'
     #print(wpn['LARstatus'])
@@ -259,9 +285,11 @@ def jassmparse(wpn):
 
     try:
         if wpn['Variant Type A'] == 'True':
-            wpn['WPN Type'] = 'M1'
+            wpn['WPN Type'] = '158A'
         if wpn['Variant Type B'] == 'True':
-            wpn['WPN Type'] = 'M2'
+            wpn['WPN Type'] = '158B'
+        if wpn['Variant Type C'] == 'True':
+            wpn['WPN Type'] = '158C'
     except:
         print('Error Jassm type: ' + str(wpn['Record Number']))
         #print(wpn['WPN Type'])
@@ -320,7 +348,7 @@ def maldparse(wpn):
     if wpn['IZ Status'] == 'Inside':
         wpn['LARstatus'] = 'ZONE'
     elif wpn['IR Status'] == 'RANGE':
-        wpn['LARstatus'] = 'IR'
+        wpn['LARstatus'] = 'RANGE'
     else:
         wpn['LARstatus'] = 'UNK'
     #print(wpn['LARstatus'])
@@ -341,7 +369,7 @@ def maldparse(wpn):
     #print(wpn['TOF'])
     #print(wpn['TOT'])
 
-    wpn['WPN Type'] = wpn['Weapon Type']
+    wpn['WPN Type'] = wpn['Weapon Type'].replace('Z2','MALDJ').replace('Z1','MALD')
     #print(wpn['WPN Type'])
 
     try:

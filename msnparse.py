@@ -2,19 +2,20 @@ from wpnparse import *
 from pyparsing import *
 import timeit
 import config
+import numpy as np
 
 def msnsplit():
     start_time = timeit.default_timer()
 
     config.msnData = open(config.filename[0], 'r', errors='ignore').read()
 
-
-
     flts = [m.start() for m in re.finditer('Minor Frame: 0000000', config.msnData)]
+    flts.append(len(config.msnData))
 
     diff = []
     config.ranges = []
     config.msndates = []
+
 
     for x,y in zip(flts[1:],flts):
         flight = config.msnData[y:x]
@@ -33,8 +34,12 @@ def msnsplit():
     config.msndates.reverse()
 
 
-    print(flts)
-    print(config.ranges)
+    #print(flts)
+    #print(alldates)
+    #print(len(alldates))
+    #print(datestarts)
+    #print(len(datestarts))
+    #print(config.ranges)
 
 
     elapsed = timeit.default_timer() - start_time
