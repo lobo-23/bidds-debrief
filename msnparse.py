@@ -1,5 +1,6 @@
 from wpnparse import *
 from pyparsing import *
+from larparse import *
 import timeit
 import config
 import numpy as np
@@ -143,7 +144,63 @@ def parserelease():
             config.count += 1
         print('\rReleases Found: ' + str(config.count))
         config.releases_available.set()
+def parselar():
+    print('Parsing LARs...')
 
+    debug = False
+
+    record = Group(Literal("Record Number") + Word(nums)) + Suppress(Literal("Weapon Event") + lineEnd())
+    msnEventExpanded = Suppress(Group(Literal("Change of IR IZ LAR") + LineEnd())) | Suppress(
+        Group(Literal("Change of In-Range/In-Zone Status") + LineEnd()))
+    eventKey = SkipTo(": ")
+    # Improve?
+    eventValue = SkipTo(lineEnd)
+    eventData = NotAny("Change of In-Range/In-Zone Status") + NotAny("Change of IR IZ LAR") + NotAny("Launch") + NotAny(
+        "Gravity Weapon Scoring") + NotAny("Weapon Launch") + NotAny('Weapon Jettison') + Group(
+        eventKey + Suppress(":") + eventValue) + Suppress(lineEnd())
+    recordBlock = record + OneOrMore(eventData) + msnEventExpanded
+
+    pData = Suppress(Literal("PERTINENT DATA"))
+    SPACE_CHARS = ' \t'
+    dataField = CharsNotIn(SPACE_CHARS)
+    space = Word(SPACE_CHARS, exact=1) ^ Word(SPACE_CHARS, exact=2)  # ^ Word(SPACE_CHARS, exact=8)
+    dataKey = delimitedList(dataField, delim=space, combine=True)
+    dataValue = Combine(dataField + ZeroOrMore(space + dataField))
+    dataBlock = Group(dataKey + dataValue) + Optional(Suppress("(" + Word(alphanums) + ")")) + Suppress(
+        LineEnd()) | Group(dataKey + Suppress("(") + Word(alphanums) + Suppress(")")) + Suppress(LineEnd()) | Group(
+        dataKey + dataValue) + Suppress(LineEnd())
+
+    name_parser = Dict(recordBlock + pData + OneOrMore(dataBlock))
+
+    config.countlars = 0
+
+    config.LARjassm = []
+    config.LARmald = []
+
+    if debug:
+        for obj, start, end in name_parser.scanString(config.msnData):
+
+            if obj['Application ID'] == '9':
+                LARjassmparse(obj)
+                config.LARjassm.append(obj.asDict())
+            if obj['Application ID'] == '12':
+                LARmaldparse(obj)
+                config.LARmald.append(obj.asDict())
+            print(obj.asDict())
+            config.countlars += 1
+        print('\rLARs Found: ' + str(config.countlars))
+    else:
+        for obj, start, end in name_parser.scanString(config.msnData):
+            if obj['Application ID'] == '9':
+                LARjassmparse(obj)
+                config.LARjassm.append(obj.asDict())
+            if obj['Application ID'] == '12':
+                LARmaldparse(obj)
+                config.LARmald.append(obj.asDict())
+
+            config.countlars += 1
+        print('\rLARs Found: ' + str(config.countlars))
+    config.lars_available.set()
 def parsemsnevn():
 
 
@@ -292,7 +349,33 @@ def evnparse(evn):
         evn['Buffers'] = "ERR"
 
     return evn
+def larreleasepair(lar, release):
+    #Inefficient way to match the last LAR LS record with the release record
+    #Subtracts time difference between LAR TOF Timestamp and Release Timestamp
+    release['Time (UTC)']= pd.to_datetime(release['Time (UTC)'])
+    release['TOR'] = pd.to_datetime(release['TOR'])
+    lar['Time (UTC)'] = pd.to_datetime(lar['Date'] + ' ' + lar['Time (UTC)'])
+    lar['TOF'] = pd.to_timedelta(lar['TOF'])
 
+    for i, row in release.iterrows():
+        pairedlars = lar[lar['LS'] == row.LS]
+        TOF = pairedlars['TOF'][pairedlars.index[-1]]
+        TOFtimestamp = pairedlars['Time (UTC)'][pairedlars.index[-1]]
+        TimeVariation = release.at[i,'Time (UTC)'] - TOFtimestamp #Difference between LARevent and TOR
+        if TOF > pd.Timedelta(12,unit='hours'):
+            TOF = TOF - pd.Timedelta(12,unit='hours')
+        release.at[i,'TOF'] = TOF
+        release.at[i, 'TOT'] = release.at[i,'Time (UTC)'] + (TOF - TimeVariation)
+        """
+        print(row.LS)
+        print(TOFtimestamp)
+        print(release.at[i, 'Time (UTC)'])
+        print(TOF)
+        print(TimeVariation)
+        print(release.at[i,'Time (UTC)'] + (TOF))
+        print(release.at[i, 'TOT'])
+        """
+    return release
 def msnevnpair(input, msnevents):
 
     input['Time (UTC)'] = pd.to_datetime(input['Date'] + ' ' + input['Time (UTC)'])
@@ -313,6 +396,7 @@ def msnevnpair(input, msnevents):
     WindDir= [msnevents['WindDir'].loc[x] for x in msnEventsIndex]
     WindSpeed = [msnevents['WindSpeed'].loc[x] for x in msnEventsIndex]
     Buffers = [msnevents['Buffers'].loc[x] for x in msnEventsIndex]
+
 
 
 
@@ -338,7 +422,14 @@ def msnevnpair(input, msnevents):
     input.insert(len(input.columns), "WindSpeed", WindSpeed, False)
 
     input.insert(len(input.columns), "TGT NAME", "", False)
-    input.insert(len(input.columns), "Buffers", Buffers, False)
-    input.insert(len(input.columns), "FOM", "", False)
+    try:
+        input.insert(len(input.columns), "Buffers", Buffers, False)
+    except:
+        pass
+
+    try:
+        input.insert(len(input.columns), "FOM", "", False)
+    except:
+        pass
 
     return input

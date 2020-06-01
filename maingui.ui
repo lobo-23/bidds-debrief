@@ -190,7 +190,7 @@
   <widget class="QLabel" name="label_4">
    <property name="geometry">
     <rect>
-     <x>560</x>
+     <x>40</x>
      <y>10</y>
      <width>81</width>
      <height>21</height>
@@ -205,7 +205,7 @@
     </font>
    </property>
    <property name="text">
-    <string>version 0.2</string>
+    <string>version 0.5</string>
    </property>
   </widget>
   <widget class="QFrame" name="frame_2">
@@ -248,7 +248,7 @@
     <property name="geometry">
      <rect>
       <x>50</x>
-      <y>120</y>
+      <y>140</y>
       <width>151</width>
       <height>41</height>
      </rect>
@@ -305,6 +305,43 @@
      <string>Callsign</string>
     </property>
    </widget>
+   <widget class="QCheckBox" name="cbGPS">
+    <property name="geometry">
+     <rect>
+      <x>130</x>
+      <y>110</y>
+      <width>71</width>
+      <height>17</height>
+     </rect>
+    </property>
+    <property name="text">
+     <string>GPS File</string>
+    </property>
+    <property name="checked">
+     <bool>true</bool>
+    </property>
+   </widget>
+  </widget>
+  <widget class="QLabel" name="label_5">
+   <property name="geometry">
+    <rect>
+     <x>610</x>
+     <y>10</y>
+     <width>41</width>
+     <height>21</height>
+    </rect>
+   </property>
+   <property name="font">
+    <font>
+     <family>Calibri</family>
+     <pointsize>12</pointsize>
+     <weight>50</weight>
+     <bold>false</bold>
+    </font>
+   </property>
+   <property name="text">
+    <string>Lobo</string>
+   </property>
   </widget>
   <zorder>frame_2</zorder>
   <zorder>frame</zorder>
@@ -317,6 +354,7 @@
   <zorder>label_9</zorder>
   <zorder>progressBar</zorder>
   <zorder>label_4</zorder>
+  <zorder>label_5</zorder>
  </widget>
  <tabstops>
   <tabstop>line_BEName</tabstop>

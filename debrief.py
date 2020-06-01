@@ -13,6 +13,7 @@ from LatLon23 import string2latlon
 from pyproj import _datadir, datadir
 import config
 import json
+import csv
 
 
 class External(QThread):
@@ -38,7 +39,12 @@ class MainWindow(QDialog):
         self.belattext = self.findChild(QLineEdit, 'line_BELat')
         self.belongtext = self.findChild(QLineEdit, 'line_BELong')
 
+        self.gpsfile = self.findChild(QCheckBox,'cbGPS')
+
         self.csname = self.findChild(QLineEdit, 'line_CS')
+
+        print()
+
         try:
             with open('defaults.json') as f:
                 config.defaults = json.load(f)
@@ -46,6 +52,8 @@ class MainWindow(QDialog):
                 self.belattext.setText(config.defaults['BElat'])
                 self.belongtext.setText(config.defaults['BElon'])
                 self.csname.setText(config.defaults['CS'])
+
+
         except:
             pass
         self.show() # Show the GUI
@@ -58,6 +66,8 @@ class MainWindow(QDialog):
         config.belat = self.belattext.text()
         config.belong = self.belongtext.text()
         config.csname = self.csname.text()
+        config.defaults['gpsfile'] = self.gpsfile.isChecked()
+
         try:
             with open('defaults.json', 'w') as f:
                 config.defaults['BEname'] = config.bename
@@ -161,7 +171,7 @@ class UiMsnPicker(QDialog):
         config.parse_pending = threading.Event()
 
 
-        config.ProgressMsnEvent = 5
+        config.ProgressMsnEvent = 2.3
 
         threadParse = threading.Thread(target=Parse)
         threadParse.start()
@@ -217,6 +227,7 @@ def Parse():
 
     config.events_available = threading.Event()
     config.releases_available = threading.Event()
+    config.lars_available = threading.Event()
 
     config.ProgressMsnEvent = 0
 
@@ -224,13 +235,25 @@ def Parse():
     threadEvents.start()
     threadReleases = threading.Thread(target=parserelease)
     threadReleases.start()
+    threadLars = threading.Thread(target=parselar())
+    threadLars.start()
+
 
     allWPNs = []
     dfAllWPNS = []
+    allLARs = []
 
-    while not config.events_available.wait(timeout=1):
+    reader = csv.reader(open('wpncodes.csv', 'r'))
+    config.wpncodes = {}
+    for row in reader:
+        k, v = row
+        config.wpncodes[k] = v
+
+    while not config.events_available.wait(timeout=1) :
         print('\r{}% done...'.format(config.ProgressMsnEvent), end='', flush=True)
     config.ProgressMsnEvent = 80
+    config.lars_available.wait()
+    config.ProgressMsnEvent = 81
     print('\r{}% done...'.format(config.ProgressMsnEvent), end='', flush=True)
 
     config.releases_available.wait()
@@ -250,17 +273,18 @@ def Parse():
         dfJDAMfiltered = dfJDAM.filter(
             ['Record Number', 'Tail', 'wpn', 'Dest', 'TOT', 'TOR', 'BULL', 'TOF', 'WPN Type', 'TGT Name', 'TGT LAT',
              'TGT LONG', 'TGT ELEV', 'PrimeNav', 'XHair', 'PrimeNavAiding', 'Buffers','FOM', 'ALT', 'GTRK', 'IAS',
-             'MHDG', 'TAS', 'LS', 'GS', 'LARstatus','Delay','FCI'], axis=1)
+             'MHDG', 'TAS', 'LS', 'GS', 'LARstatus','Delay','FCI','Mach'], axis=1)
         dfAllWPNS.append(dfJDAMfiltered)
     if len(config.gwd) > 0:
         dfGWD = pd.DataFrame(config.gwd)
         #dfGWD.to_csv('gwd.csv')
         msnevnpair(dfGWD, config.dfMsnEvents)
+        dfGWD.LARstatus = dfGWD.FCI
         allWPNs.append(dfGWD)
         dfGWDfiltered = dfGWD.filter(
             ['Record Number', 'Tail', 'wpn', 'Dest', 'TOT', 'TOR', 'BULL', 'TOF', 'WPN Type', 'TGT Name', 'TGT LAT',
              'TGT LONG', 'TGT ELEV', 'PrimeNav', 'XHair', 'PrimeNavAiding', 'Buffers','FOM', 'ALT', 'GTRK', 'IAS',
-             'MHDG', 'TAS', 'LS', 'GS', 'LARstatus','Delay','FCI'], axis=1)
+             'MHDG', 'TAS', 'LS', 'GS', 'LARstatus','Delay','FCI','Mach'], axis=1)
         dfAllWPNS.append(dfGWDfiltered)
     if len(config.wcmd) > 0:
         dfWCMD = pd.DataFrame(config.wcmd)
@@ -270,28 +294,43 @@ def Parse():
         dfWCMDfiltered = dfWCMD.filter(
             ['Record Number', 'Tail', 'wpn', 'Dest', 'TOT', 'TOR', 'BULL', 'TOF', 'WPN Type', 'TGT Name', 'TGT LAT',
              'TGT LONG', 'TGT ELEV', 'PrimeNav', 'XHair', 'PrimeNavAiding', 'Buffers','FOM', 'ALT', 'GTRK', 'IAS',
-             'MHDG', 'TAS', 'LS', 'GS', 'LARstatus','Delay','FCI'], axis=1)
+             'MHDG', 'TAS', 'LS', 'GS', 'LARstatus','Delay','FCI','Mach'], axis=1)
         dfAllWPNS.append(dfWCMDfiltered)
     if len(config.jassm) > 0:
         dfJASSM = pd.DataFrame(config.jassm)
         #dfJASSM.to_csv('jassm.csv')
         msnevnpair(dfJASSM, config.dfMsnEvents)
+        if len(config.LARjassm) > 0:
+            dfLARjassm = pd.DataFrame(config.LARjassm)
+            allLARs.append(dfLARjassm)
+            try:
+                larreleasepair(dfLARjassm,dfJASSM)
+            except:
+                pass
         allWPNs.append(dfJASSM)
         dfJASSMfiltered = dfJASSM.filter(
             ['Record Number', 'Tail', 'wpn', 'Dest', 'TOT', 'TOR', 'BULL', 'TOF', 'WPN Type', 'TGT Name', 'TGT LAT',
              'TGT LONG', 'TGT ELEV', 'PrimeNav', 'XHair', 'PrimeNavAiding', 'Buffers','FOM', 'ALT', 'GTRK', 'IAS',
-             'MHDG', 'TAS', 'LS', 'GS', 'LARstatus','Delay','FCI'], axis=1)
+             'MHDG', 'TAS', 'LS', 'GS', 'LARstatus','Delay','FCI','Mach'], axis=1)
         dfAllWPNS.append(dfJASSMfiltered)
     if len(config.mald) > 0:
         dfMALD = pd.DataFrame(config.mald)
         #dfMALD.to_csv('mald.csv')
         msnevnpair(dfMALD, config.dfMsnEvents)
+        if len(config.LARmald) > 0:
+            dfLARmald = pd.DataFrame(config.LARmald)
+            allLARs.append(dfLARmald)
+            try:
+                larreleasepair(dfLARmald,dfMALD)
+            except:
+                pass
         allWPNs.append(dfMALD)
         dfMALDfiltered = dfMALD.filter(
             ['Record Number', 'Tail', 'wpn', 'Dest', 'TOT', 'TOR', 'BULL', 'TOF', 'WPN Type', 'TGT Name', 'TGT LAT',
              'TGT LONG', 'TGT ELEV', 'PrimeNav', 'XHair', 'PrimeNavAiding', 'Buffers','FOM', 'ALT', 'GTRK', 'IAS',
-             'MHDG', 'TAS', 'LS', 'GS', 'LARstatus','Delay','FCI'], axis=1)
+             'MHDG', 'TAS', 'LS', 'GS', 'LARstatus','Delay','FCI','Mach'], axis=1)
         dfAllWPNS.append(dfMALDfiltered)
+
 
     config.ProgressMsnEvent = 90
     print('\r{}% done...'.format(config.ProgressMsnEvent), end='', flush=True)
@@ -309,7 +348,14 @@ def Parse():
             sheetname = df.loc[0, 'wpn']
             append_df_to_excel(newfilepath,df,sheet_name=sheetname,startrow=0, index=False)
     append_df_to_excel(newfilepath, config.dfMsnEvents, sheet_name="Timestamps", startrow=0, index=False)
-    to_gpsnmea(config.dfMsnEvents,newfilepath)
+    for df in allLARs:
+        sheetname = df.loc[0,'LAR']
+        append_df_to_excel(newfilepath, df, sheet_name=sheetname, startrow=0, index=False)
+    if config.defaults['gpsfile']:
+        try:
+            to_gpsnmea(config.dfMsnEvents,newfilepath)
+        except:
+            pass
     config.ProgressMsnEvent = 100
     print('\r{}% done...'.format(config.ProgressMsnEvent), end='', flush=True)
     elapsed = timeit.default_timer() - start_time

@@ -20,15 +20,17 @@ def jdamparse(wpn):
                     wpn['Dest'] = "DS-Pred" + str(wpn['Stream operation']).replace('True',' ON').replace('False',' OFF')
             else:
                 wpn['Dest'] = "D" + str(wpn['LP DT Num'])
-                if 'Updated' in wpn['TGP Mode']:
-                    if 'Continuous' in wpn['TGP Mode']:
-                        wpn['Dest'] = wpn['Dest'] + "-Cont" + str(wpn['Stream operation']).replace('True',
-                                                                                                        ' ON').replace(
-                            'False', ' OFF')
-                    elif 'Predict' in wpn['TGP Mode']:
-                        wpn['Dest'] = wpn['Dest'] + "-Pred" + str(wpn['Stream operation']).replace('True',
-                                                                                                        ' ON').replace(
-                            'False', ' OFF')
+                if 'TGP Mode' in wpn:
+                    if 'Updated' in wpn['TGP Mode']:
+                        if 'Continuous' in wpn['TGP Mode']:
+                            wpn['Dest'] = wpn['Dest'] + "-Cont" + str(wpn['Stream operation']).replace('True',
+                                                                                                            ' ON').replace(
+                                'False', ' OFF')
+                        elif 'Predict' in wpn['TGP Mode']:
+                            wpn['Dest'] = wpn['Dest'] + "-Pred" + str(wpn['Stream operation']).replace('True',
+                                                                                                            ' ON').replace(
+                                'False', ' OFF')
+
 
     # print(wpn['Dest'])
 
@@ -121,7 +123,10 @@ def jdamparse(wpn):
             else:
                 wpn['LS'] = wpn['LS'] + ' L' + Laser
     except:
-        wpn['WPN Type'] = wpn['WPN Code']
+        if wpn['WPN Code'] in config.wpncodes:
+            wpn['WPN Type'] = config.wpncodes[wpn['WPN Code']]
+        else:
+            wpn['WPN Type'] = wpn['WPN Code']
 
     wpn['GS'] = round(float(wpn['GND Speed'].replace('  ft/sec', '')) * 0.592484)
     # print(wpn['GS'])
@@ -252,7 +257,7 @@ def jassmparse(wpn):
 
     if wpn['IZ Status'] == 'Inside':
         wpn['LARstatus'] = 'ZONE'
-    elif wpn['IR Status'] == 'RANGE':
+    elif wpn['IR Status'] == 'Inside':
         wpn['LARstatus'] = 'RANGE'
     else:
         wpn['LARstatus'] = 'UNK'
@@ -261,18 +266,14 @@ def jassmparse(wpn):
     try:
         if wpn['Mission Planned TGT'] == 'True':
             wpn['Dest'] = wpn['LP DT Number']
+            if wpn['LP DT Number'].isnumeric():
+                if int(wpn['LP DT Number']) > 109:
+                    wpn['Dest'] = 'A' + str(int(wpn['LP DT Number']) -109)
         else:
             if wpn['LP DT Number'].isnumeric():
                 wpn['Dest'] = "D" + str(wpn['LP DT Number'])
     except:
-        try:
-            if wpn['Mission Planned TGT'] == 'True':
-                wpn['Dest'] = wpn['LP DT Num']
-            else:
-                if wpn['LP DT Num'].isnumeric():
-                    wpn['Dest'] = "D" + str(wpn['LP DT Num'])
-        except:
-            wpn['Dest'] = ''
+        wpn['Dest'] = ''
     #print(wpn['Dest'])
 
     wpn['TOR'] = pd.to_datetime(wpn['Time (UTC)'] + ' ' + wpn['Date'])
@@ -284,12 +285,15 @@ def jassmparse(wpn):
     #print(wpn['TOT'])
 
     try:
-        if wpn['Variant Type A'] == 'True':
-            wpn['WPN Type'] = '158A'
-        if wpn['Variant Type B'] == 'True':
-            wpn['WPN Type'] = '158B'
-        if wpn['Variant Type C'] == 'True':
-            wpn['WPN Type'] = '158C'
+        if 'Store Description' in wpn:
+            wpn['WPN Type'] = wpn['Store Description'].replace("AGM-","")
+        else:
+            if wpn['Variant Type A'] == 'True':
+                wpn['WPN Type'] = '158A'
+            if wpn['Variant Type B'] == 'True':
+                wpn['WPN Type'] = '158B'
+            if wpn['Variant Type C'] == 'True':
+                wpn['WPN Type'] = '158C'
     except:
         print('Error Jassm type: ' + str(wpn['Record Number']))
         #print(wpn['WPN Type'])
@@ -297,9 +301,12 @@ def jassmparse(wpn):
     wpn['TGT LAT'] = ''
     wpn['TGT LONG'] = ''
     wpn['TGT ELEV'] = ''
-    wpn['TGT Name'] = ''
+    try:
+        wpn['TGT Name'] = 'JASSMGRP_' + str(wpn['Weapon Group ID']).zfill(2) + " " + 'MSN'+ str(wpn['Primary Target ID']).zfill(2)
+    except:
+        wpn['TGT Name'] = ''
 
-    wpn['BULL'] = bullcalculate(wpn['TGT LAT'], wpn['TGT LONG'])
+    wpn['BULL'] = bullcalculate(wpn['LAT'], wpn['LONG'])
     #print(wpn['TGT LAT'])
     #print(wpn['TGT LONG'])
     #print(wpn['TGT ELEV'])
@@ -347,7 +354,7 @@ def maldparse(wpn):
 
     if wpn['IZ Status'] == 'Inside':
         wpn['LARstatus'] = 'ZONE'
-    elif wpn['IR Status'] == 'RANGE':
+    elif wpn['IR Status'] == 'Inside':
         wpn['LARstatus'] = 'RANGE'
     else:
         wpn['LARstatus'] = 'UNK'
@@ -368,8 +375,10 @@ def maldparse(wpn):
     #print(wpn['TOR'])
     #print(wpn['TOF'])
     #print(wpn['TOT'])
-
-    wpn['WPN Type'] = wpn['Weapon Type'].replace('Z2','MALDJ').replace('Z1','MALD')
+    try:
+        wpn['WPN Type'] = wpn['Store Description'].replace('ADM-160B', 'MALD').replace('ADM-160C', 'MALDJ')
+    except:
+        wpn['WPN Type'] = wpn['Weapon Type'].replace('Z2','MALDJ').replace('Z1','MALD')
     #print(wpn['WPN Type'])
 
     try:
@@ -385,7 +394,7 @@ def maldparse(wpn):
         wpn['TGT ELEV'] = str(round(float(wpn['EP Elevation'].replace('  feet', '').replace('+ ', '')))) + "'"
     except:
         wpn['TGT ELEV'] = 'ERR'
-    wpn['BULL'] = bullcalculate(wpn['TGT LAT'], wpn['TGT LONG'])
+    wpn['BULL'] = bullcalculate(wpn['LAT'], wpn['LONG'])
     #print(wpn['TGT LAT'])
     #print(wpn['TGT LONG'])
     #print(wpn['TGT ELEV'])
@@ -415,7 +424,7 @@ def gwdparse(wpn):
 
     wpn['TOR'] = pd.to_datetime(wpn['Time (UTC)'] + ' ' + wpn['Date'])
 
-    # wpn['LARstatus']  = 'ZONE'  #Set as FCI From mission Event
+    wpn['LARstatus']  = ' '  #Set as FCI From mission Event
 
     if wpn['Weapon Time Of Fall'] != 0:
         try:
@@ -427,6 +436,8 @@ def gwdparse(wpn):
     wpn['TOT'] = wpn['TOR'] + pd.to_timedelta(str(wpn['TOF']) + 's')
 
     wpn['WPN Type'] = "B" + "{:02d}".format(int(wpn['Bomb Type']))
+    if wpn['WPN Type'] in config.wpncodes:
+        wpn['WPN Type'] = config.wpncodes[wpn['WPN Type']]
 
     try:
         wpn['ALT'] = str(round(float(wpn['Aircraft Altitude'].replace('  feet', '').replace('+ ', ''))))
@@ -480,19 +491,20 @@ def gwdparse(wpn):
     if wpn['First Sample Valid'] == 'True':
         wpn['FOM'] = wpn['FOM First Sample']
     elif wpn['Second Sample Valid'] == 'True':
-        wpn['FOM'] = wpn['FOM Second Sample']
+        wpn['FOM'] = wpn['FOM Second Sample']   
     else:
         wpn['FOM'] = 'ERR'
     try:
-        BuffersN = float(evn['Trackball Buffer North'].replace('  feet', '').replace('+ ', '').replace('- ', ''))
-        BuffersE = float(evn['Trackball Buffer East'].replace('  feet', '').replace('+ ', '').replace('- ', ''))
-        if "- " in evn['Trackball Buffer North']:
+        BuffersN = float(wpn['Trackball Buffer North'].replace('  feet', '').replace('N ', '').replace('S ', ''))
+        BuffersE = float(wpn['Trackball Buffer East'].replace('  feet', '').replace('E ', '').replace('W ', ''))
+        if "S " in wpn['Trackball Buffer North']:
             BuffersN = BuffersN * -1
-        if "- " in evn['Trackball Buffer East']:
+        if "W " in wpn['Trackball Buffer East']:
             BuffersE = BuffersE * -1
-        evn['Buffers'] = round(Vector2Polar(BuffersN,BuffersE)[1])
+        wpn['Buffers'] = round(Vector2Polar(BuffersN,BuffersE)[1])
     except:
-        evn['Buffers'] = "ERR"
-
+        wpn['Buffers'] = "ERR"
+    wpn['LARstatus'] = 'RANGE'
 
     return wpn
+
