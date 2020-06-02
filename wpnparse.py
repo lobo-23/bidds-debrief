@@ -100,7 +100,10 @@ def jdamparse(wpn):
         wpn['TGT ELEV'] = 'ERR'
 
     # print(wpn['TGT ELEV'])
-    wpn['BULL'] = bullcalculate(wpn['TGT LAT'],wpn['TGT LONG'])
+    try:
+        wpn['BULL'] = bullcalculate(wpn['TGT LAT'],wpn['TGT LONG'])
+    except:
+        wpn['BULL'] = ''
 
     try:
         wpn['GTRK'] = round(float(wpn['GND Trk Angle'].replace('+ ', '').replace('- ', '').replace('  deg','')))
@@ -210,7 +213,10 @@ def wcmdparse(wpn):
         wpn['TGT ELEV'] = str(round(wpn['TGT ELEV'])) + "' " + wpn['Target Alt Ref']
     except:
         wpn['TGT ELEV'] = 'ERR'
-    wpn['BULL'] = bullcalculate(wpn['TGT LAT'], wpn['TGT LONG'])
+    try:
+        wpn['BULL'] = bullcalculate(wpn['TGT LAT'], wpn['TGT LONG'])
+    except:
+        wpn['BULL'] = ''
     wpn['LS'] = wpn['Device ID'].replace('P', '')
     wpn['GS'] = round(float(wpn['Ground Speed'].replace('  ft/sec', '')) * 0.592484)
     wpn['Delay'] = wpn['Fuze Option'].replace('Prox_Fuzing', 'PROX')
@@ -302,7 +308,7 @@ def jassmparse(wpn):
     wpn['TGT LONG'] = ''
     wpn['TGT ELEV'] = ''
     try:
-        wpn['TGT Name'] = 'JASSMGRP_' + str(wpn['Weapon Group ID']).zfill(2) + " " + 'MSN'+ str(wpn['Primary Target ID']).zfill(2)
+        wpn['TGT Name'] = 'JASSMGRP_' + str(wpn['Weapon Group ID']).zfill(2) + " " + 'MSN'+ str(wpn['Primary Target ID'])
     except:
         wpn['TGT Name'] = ''
 
@@ -394,7 +400,10 @@ def maldparse(wpn):
         wpn['TGT ELEV'] = str(round(float(wpn['EP Elevation'].replace('  feet', '').replace('+ ', '')))) + "'"
     except:
         wpn['TGT ELEV'] = 'ERR'
-    wpn['BULL'] = bullcalculate(wpn['LAT'], wpn['LONG'])
+    try:
+        wpn['BULL'] = bullcalculate(wpn['TGT LAT'], wpn['TGT LONG'])
+    except:
+        wpn['BULL'] = ''
     #print(wpn['TGT LAT'])
     #print(wpn['TGT LONG'])
     #print(wpn['TGT ELEV'])
@@ -470,7 +479,10 @@ def gwdparse(wpn):
     except:
         wpn['TGT LAT'] = 'ERR'
 
-    wpn['BULL'] = bullcalculate(wpn['TGT LAT'], wpn['TGT LONG'])
+    try:
+        wpn['BULL'] = bullcalculate(wpn['TGT LAT'], wpn['TGT LONG'])
+    except:
+        wpn['BULL'] = ''
 
     try:
         wpn['GTRK'] = round(float(wpn['Ground Track'].replace('+ ', '').replace('- ', '').replace('  deg','')))

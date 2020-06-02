@@ -5,6 +5,9 @@ import timeit
 import config
 import numpy as np
 
+
+
+
 def msnsplit():
     start_time = timeit.default_timer()
 
@@ -145,7 +148,7 @@ def parserelease():
         print('\rReleases Found: ' + str(config.count))
         config.releases_available.set()
 def parselar():
-    print('Parsing LARs...')
+    print('\rParsing LARs...')
 
     debug = False
 
@@ -201,6 +204,7 @@ def parselar():
             config.countlars += 1
         print('\rLARs Found: ' + str(config.countlars))
     config.lars_available.set()
+
 def parsemsnevn():
 
 
@@ -240,6 +244,7 @@ def parsemsnevn():
             MsnEvents.append(obj.asDict())
 
             config.ProgressMsnEvent = round(end / len(config.msnData) * 80, 1)
+
         if len(MsnEvents) > 0:
 
             config.dfMsnEvents = pd.DataFrame(MsnEvents)
@@ -249,7 +254,11 @@ def parsemsnevn():
     config.events_available.set()
 
 def evnparse(evn):
-    evn['FCIraw'] = evn.pop('FCI')
+    try:
+        evn['FCIraw'] = evn.pop('FCI')
+    except:
+        pass
+
     evn['TASraw'] = evn.pop('TAS')
 
     if evn['Tail Year'] == '0':
@@ -349,6 +358,14 @@ def evnparse(evn):
         evn['Buffers'] = "ERR"
 
     return evn
+def strfdelta(tdelta, fmt):
+    d = {"days": tdelta.days}
+    d["hours"], rem = divmod(tdelta.seconds, 3600)
+    d["minutes"], d["seconds"] = divmod(rem, 60)
+    return str(d["hours"]) + ':'+ str(d["minutes"]).zfill(2) + ':' + str(d["minutes"]).zfill(2)
+
+#print(strfdelta(pd.to_timedelta("00:08:50"),"{hours}:{minutes}:{seconds}"))
+
 def larreleasepair(lar, release):
     #Inefficient way to match the last LAR LS record with the release record
     #Subtracts time difference between LAR TOF Timestamp and Release Timestamp
@@ -358,14 +375,17 @@ def larreleasepair(lar, release):
     lar['TOF'] = pd.to_timedelta(lar['TOF'])
 
     for i, row in release.iterrows():
-        pairedlars = lar[lar['LS'] == row.LS]
-        TOF = pairedlars['TOF'][pairedlars.index[-1]]
-        TOFtimestamp = pairedlars['Time (UTC)'][pairedlars.index[-1]]
-        TimeVariation = release.at[i,'Time (UTC)'] - TOFtimestamp #Difference between LARevent and TOR
-        if TOF > pd.Timedelta(12,unit='hours'):
-            TOF = TOF - pd.Timedelta(12,unit='hours')
-        release.at[i,'TOF'] = TOF
-        release.at[i, 'TOT'] = release.at[i,'Time (UTC)'] + (TOF - TimeVariation)
+        try:
+            pairedlars = lar[lar['LS'] == row.LS]
+            TOF = pairedlars['TOF'][pairedlars.index[-1]]
+            TOFtimestamp = pairedlars['Time (UTC)'][pairedlars.index[-1]]
+            TimeVariation = release.at[i,'Time (UTC)'] - TOFtimestamp #Difference between LARevent and TOR
+            if TOF > pd.Timedelta(12,unit='hours'):
+                TOF = TOF - pd.Timedelta(12,unit='hours')
+            release.at[i,'TOF'] = strfdelta(TOF,"{hours}:{minutes}:{seconds}")
+            release.at[i, 'TOT'] = release.at[i,'Time (UTC)'] + (TOF - TimeVariation)
+        except:
+            pass
         """
         print(row.LS)
         print(TOFtimestamp)
@@ -428,7 +448,7 @@ def msnevnpair(input, msnevents):
         pass
 
     try:
-        input.insert(len(input.columns), "FOM", "", False)
+        input.insert(len(input.columns), "FOM", "1", False)
     except:
         pass
 

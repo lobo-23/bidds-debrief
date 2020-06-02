@@ -8,6 +8,7 @@ import config
 import pynmea2
 import subprocess
 import os
+import xlrd
 
 def Vector2Polar(N,E):
     Mag = np.sqrt(N**2 + E**2)
@@ -130,9 +131,10 @@ def updatefillins(filename):
         for title, coord in writer.book.defined_names['BELong'].destinations:
             ws = writer.book[title]
             ws[coord] = str(config.belong)
-        for title, coord in writer.book.defined_names['cs'].destinations:
-            ws = writer.book[title]
-            ws[coord] = str(config.csname)
+        if len(config.csname)>0:
+            for title, coord in writer.book.defined_names['cs'].destinations:
+                ws = writer.book[title]
+                ws[coord] = str(config.csname)
 
         # copy existing sheets
         writer.sheets = {ws.title:ws for ws in writer.book.worksheets}
@@ -173,3 +175,38 @@ def to_gpsnmea(df,filename):
     #os.system('cmd .\output\GPSBabel\gpsbabel -i nmea -f ' + filename + ' -x interpolate,time=10 -o nmea -F "testtrack.gps"')
     subprocess.Popen(r'explorer /select,'+ filename )
     os.startfile(filename, 'open')
+
+def jassm_report_match(debrief_filename, jassm_report):
+
+    jreport = pd.ExcelFile(jassm_report)
+    wpngroups = []
+
+    for sheet in jreport.sheet_names:
+        if 'JASSMGRP' in sheet:
+            #print(sheet)
+            df = jreport.parse(sheet, skiprows=5, index_col=None, na_values=['NA'])
+            df['wpngroup'] = str(sheet) + " " + 'MSN'+ df['Msn'].astype(str)
+            wpngroups.append(df)
+    if len(wpngroups)>0:
+        wpns = pd.read_excel(debrief_filename, sheet_name='Combined',index_col=None, na_values=['NA'])
+        wpns.astype({'TGT LAT':str,'TGT LONG':str,'TGT ELEV':str,'BULL':str}).dtypes
+        wpns['TGT LAT'] = wpns['TGT LAT'].astype(str)
+        wpns['TGT LONG'] = wpns['TGT LONG'].astype(str)
+        wpns['TGT ELEV'] = wpns['TGT ELEV'].astype(str)
+        wpns['BULL'] = wpns['BULL'].astype(str)
+
+        for i, row in wpns.iterrows():
+            for group in wpngroups:
+                for j, rows in group.iterrows():
+                    if wpns.at[i,'TGT Name'] == group.at[j,'wpngroup']:
+                        wpns.at[i, 'TGT Name'] = group.at[j,'Mission Name']
+                        wpns.at[i, 'TGT LAT'] = group.at[j, 'Tgt Latitude']
+                        wpns.at[i, 'TGT LONG'] = group.at[j,'Tgt Longitude']
+                        wpns.at[i, 'TGT ELEV'] = str(group.at[j,'Tgt Elev (HAE)']) + "' HAE"
+                        try:
+                            wpns.at[i, 'BULL'] = bullcalculate(wpns.at[i, 'TGT LAT'], wpns.at[i, 'TGT LONG'])
+                        except:
+                            wpns.at[i, 'BULL']  = ''
+        return wpns
+    else:
+        return pd.DataFrame()

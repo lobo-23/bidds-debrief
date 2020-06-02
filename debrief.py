@@ -24,7 +24,7 @@ class External(QThread):
         while config.ProgressMsnEvent < 100:
             time.sleep(1)
             self.countChanged.emit(config.ProgressMsnEvent)
-class MainWindow(QDialog):
+class MainWindow(QMainWindow):
     def __init__(self, parent=None):
         super(MainWindow, self).__init__(parent) # Call the inherited classes __init__ method
         uic.loadUi('maingui.ui', self) # Load the .ui file
@@ -40,10 +40,14 @@ class MainWindow(QDialog):
         self.belongtext = self.findChild(QLineEdit, 'line_BELong')
 
         self.gpsfile = self.findChild(QCheckBox,'cbGPS')
-
+        self.turbo = self.findChild(QCheckBox, 'cbTurbo')
         self.csname = self.findChild(QLineEdit, 'line_CS')
 
-        print()
+        self.manualjassmmatch = self.findChild(QAction,'actionJASSM_Report_Match')
+        self.manualjassmmatch.triggered.connect(self.jassmmatch)
+
+        self.howtoguide = self.findChild(QAction,'actionHow_To_Guide')
+        self.howtoguide.triggered.connect(self.guideopen)
 
         try:
             with open('defaults.json') as f:
@@ -53,13 +57,53 @@ class MainWindow(QDialog):
                 self.belongtext.setText(config.defaults['BElon'])
                 self.csname.setText(config.defaults['CS'])
 
-
         except:
             pass
         self.show() # Show the GUI
 
+    def guideopen(self):
+        prefixed = [filename for filename in os.listdir('.') if filename.startswith("BIDDS Debrief Card Guide") and filename.endswith("pdf")]
+        try:
+            os.startfile(prefixed[-1])
+        except:
+            QMessageBox.question(self, 'Error',
+                                                  "Guide not found.",
+                                                  QMessageBox.Ok)
+            return
+    def jassmmatch(self):
+        config.bename = self.benametext.text()
+        config.belat = self.belattext.text()
+        config.belong = self.belongtext.text()
+        config.csname = '' #Doesnt overwrite callsign
+        if len(config.bename)>0 or len(config.belat)>0 or len(config.belong)>0:
+            try:
+                config.becoord = string2latlon(config.belat, config.belong, 'H% %d% %M')
+            except:
+                config.becoord = QMessageBox.question(self, 'Bullseye Error',
+                                                    "Coordinate format not recognized.\n N/S DD MM.MMMM, E/W DDD MM.MMMM",
+                                                    QMessageBox.Ok)
+                print('Bullseye Lat/Long Error: Input DD MM.MMMM format.')
+                return
+        else:
+            config.becoord = None
+        self.matchpick = UiJassmMatch(self)
+        self.matchpick.show()
+
     def onCountChanged(self, value):
         self.progressbar.setValue(value)
+        if value == 95:
+            config.ProgressMsnEvent = 96
+            config.jassmmatch = QMessageBox.question(self, 'JASSM Match',
+                                     "JASSM releases were found for your mission:\n\nWould you like to match these releases to a JMPS DTC JASSM TARGET SUMMARY for JDPI Data to show properly?\n\nYou can also complete this later by selecting Tools>JASSM Report Match.",
+                                     QMessageBox.Yes | QMessageBox.No)
+            if config.jassmmatch == QMessageBox.Yes:
+                selectedfile = QFileDialog.getOpenFileName(self, 'Open JMPS JASSM Report Excel File',
+                                            os.path.join(os.path.join(os.environ['USERPROFILE']), 'Desktop'),
+                                            "Excel File (*.xlsm)")
+                if len(selectedfile[0]) > 0:
+                    config.jassmreport_filename = selectedfile[0]
+            else:
+                config.jassmreport_filename = False
 
     def TXTLoadPressed(self):
         config.bename = self.benametext.text()
@@ -67,6 +111,7 @@ class MainWindow(QDialog):
         config.belong = self.belongtext.text()
         config.csname = self.csname.text()
         config.defaults['gpsfile'] = self.gpsfile.isChecked()
+        config.turbocharge = self.turbo.isChecked()
 
         try:
             with open('defaults.json', 'w') as f:
@@ -139,6 +184,58 @@ class Worker(QObject):
 
     def abort(self):
         self.__abort = True
+class UiJassmMatch(QDialog):
+    def __init__(self,parent=None):
+        super(UiJassmMatch, self).__init__(parent) # Call the inherited classes __init__ method
+        uic.loadUi('jassmmatch.ui', self) # Load the .ui file
+
+        self.debriefload = self.findChild(QPushButton, 'loaddebrief') # Find the button
+        self.debriefload.clicked.connect(self.debriefpicker)
+        self.sumload = self.findChild(QPushButton, 'loadjassmreport')
+        self.sumload.clicked.connect(self.jassmreportpicker)
+        self.match = self.findChild(QPushButton, 'match') # Find the button
+        self.match.clicked.connect(self.match_releases) # Remember to pass the definition/method, not the return value!
+        config.debriefcard_filename = ''
+        config.jassmreport_filename = ''
+        self.show()  # Show the GUI
+
+    def match_releases(self):
+        self.match.setText('Matching...')
+        self.repaint()
+        newfilename = config.debriefcard_filename.replace('.xlsx', ' (matched).xlsx')
+        try:
+            shutil.copy(config.debriefcard_filename, newfilename)
+        except:
+            QMessageBox.question(self, 'File Error',
+                                 "File copy error, please close " + str(newfilename) + ' and try again.',
+                                 QMessageBox.Ok)
+            self.match.setText('Match')
+            self.repaint()
+            return
+        config.debriefcard_filename = newfilename
+        updatecombined = jassm_report_match(config.debriefcard_filename, config.jassmreport_filename)
+        if not updatecombined.empty:
+            append_df_to_excel(config.debriefcard_filename, updatecombined, sheet_name="Combined", startrow=0, index=False)
+            updatefillins(config.debriefcard_filename)
+            os.startfile(config.debriefcard_filename)
+        self.match.setText('Match')
+        self.repaint()
+    def debriefpicker(self):
+        selectedfile = QFileDialog.getOpenFileName(self, 'Open Debrief Card to Pair',
+                                                   os.path.join(os.path.join(os.environ['USERPROFILE']), 'Desktop'),
+                                                   "Excel File (*.xlsx)")
+        if len(selectedfile[0]) > 0:
+            config.debriefcard_filename = selectedfile[0]
+            if len(config.debriefcard_filename) > 0 and len(config.jassmreport_filename) > 0:
+                self.match.setEnabled(True)
+    def jassmreportpicker(self):
+        selectedfile = QFileDialog.getOpenFileName(self, 'Open JMPS JASSM Report Excel File',
+                                                   os.path.join(os.path.join(os.environ['USERPROFILE']), 'Desktop'),
+                                                   "Excel File (*.xlsm)")
+        if len(selectedfile[0]) > 0:
+            config.jassmreport_filename = selectedfile[0]
+            if len(config.debriefcard_filename) > 0 and len(config.jassmreport_filename) > 0:
+                self.match.setEnabled(True)
 class UiMsnPicker(QDialog):
     def __init__(self,parent=None):
         super(UiMsnPicker, self).__init__(parent) # Call the inherited classes __init__ method
@@ -162,14 +259,34 @@ class UiMsnPicker(QDialog):
         #self.FlightCount.setText(print(self.cbFlights.currentIndex()))
         idx = self.cbFlights.currentIndex()
 
-
         i = int(config.ranges[idx][0])
         j = int(config.ranges[idx][1])
         config.msnData = config.msnData[i:j]
+        if config.turbocharge == True:
 
+            larmald = [m.start() for m in re.finditer('Change of IR IZ LAR', config.msnData)]
+            larjassm = [m.start() for m in re.finditer('Change of In-Range/In-Zone Status', config.msnData)]
+            rel = [m.start() for m in re.finditer('Weapon Scoring', config.msnData)]
 
+            config.larparse = len(larmald + larjassm) >0
+            releases = rel + larmald + larjassm
+            releases.sort()
+
+            records = [m.start() for m in re.finditer('Mission Event', config.msnData)]
+
+            print('Turbo Mode Activated')
+            try:
+                if min(releases)> 30000:
+                    K = min(releases)-30000
+                else:
+                    K = 1
+                start = records[min(range(len(records)), key = lambda i: abs(records[i]-K))]
+                K = max(releases)+30000
+                stop = records[min(range(len(records)), key=lambda i: abs(records[i] - K))]
+                config.msnData = config.msnData[start:stop]
+            except:
+                print('Turbo Mode Error, deactivating...')
         config.parse_pending = threading.Event()
-
 
         config.ProgressMsnEvent = 2.3
 
@@ -235,8 +352,9 @@ def Parse():
     threadEvents.start()
     threadReleases = threading.Thread(target=parserelease)
     threadReleases.start()
-    threadLars = threading.Thread(target=parselar())
-    threadLars.start()
+    if config.larparse:
+        threadLars = threading.Thread(target=parselar())
+        threadLars.start()
 
 
     allWPNs = []
@@ -251,9 +369,14 @@ def Parse():
 
     while not config.events_available.wait(timeout=1) :
         print('\r{}% done...'.format(config.ProgressMsnEvent), end='', flush=True)
+
     config.ProgressMsnEvent = 80
-    config.lars_available.wait()
+
+    if config.larparse:
+        config.lars_available.wait()
+
     config.ProgressMsnEvent = 81
+
     print('\r{}% done...'.format(config.ProgressMsnEvent), end='', flush=True)
 
     config.releases_available.wait()
@@ -351,6 +474,18 @@ def Parse():
     for df in allLARs:
         sheetname = df.loc[0,'LAR']
         append_df_to_excel(newfilepath, df, sheet_name=sheetname, startrow=0, index=False)
+
+    if len(config.jassm) > 0:
+        config.ProgressMsnEvent = 95
+        config.jassmreport_filename = None
+        while config.jassmreport_filename == None:
+            time.sleep(1)
+        config.debriefcard_filename = newfilepath
+        if config.jassmmatch == QMessageBox.Yes and config.jassmreport_filename != False:
+            updatecombined = jassm_report_match(config.debriefcard_filename,config.jassmreport_filename)
+            if not updatecombined.empty:
+                append_df_to_excel(newfilepath, updatecombined, sheet_name="Combined", startrow=0, index=False)
+    config.ProgressMsnEvent = 99
     if config.defaults['gpsfile']:
         try:
             to_gpsnmea(config.dfMsnEvents,newfilepath)

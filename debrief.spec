@@ -4,7 +4,6 @@ block_cipher = None
 
 added_files = [
     ( '.\*.ui', '.' ),
-    ( '.\*.png', '.' ),
     ( '.\*.ico', '.'),
     ( '.\wpncodes.csv', '.'),
     ( '.\*.json', '.'),
@@ -18,7 +17,7 @@ a = Analysis(['debrief.spec'],
              pathex=['P:\\Python\\bidds-debrief'],
              binaries=[],
              datas=added_files,
-             hiddenimports=['openpyxl','PyQt5.uic','timeit','utils','msnparse','pyproj.datadir','json','subprocess','pynmea2','csv'],
+             hiddenimports=['openpyxl','PyQt5.uic','timeit','utils','msnparse','pyproj.datadir','json','subprocess','pynmea2','csv','xlrd'],
              hookspath=[],
              runtime_hooks=[],
              excludes=[],

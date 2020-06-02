@@ -8,6 +8,7 @@ global msndates
 global dfMsnEvents
 global count
 global countlars
+global turbocharge
 
 global ProgressMsnEvent
 global events_available
@@ -20,6 +21,7 @@ global gwd
 global wcmd
 global jassm
 global mald
+global larparse
 global LARmald
 global LARjassm
 
@@ -31,3 +33,7 @@ global csname
 global defaults
 global gpsfile
 global wpncodes
+
+global jassmmatch
+global debriefcard_filename
+global jassmreport_filename
