@@ -180,8 +180,14 @@ def wcmdparse(wpn):
     else:
         wpn['LARstatus'] = 'UNK'
 
-    wpn['TOF'] = ''  # Does not exist
-    wpn['TOT'] = ''  # Unable to calculate with no TOF
+    try:
+        wpn['TOT'] = pd.to_datetime(wpn['TGT Impact Point TOT'].replace('+','').replace('hr,min,sec','').replace(' ','') + ' ' + wpn['Date'])
+    except:
+        wpn['TOT'] = ''
+    try:
+        wpn['TOF'] = wpn['TOT'] - wpn['TOR']
+    except:
+        wpn['TOF'] = ''
 
     wpn['WPN Type'] = wpn['Store Description'].replace('CBU-', '')
 
