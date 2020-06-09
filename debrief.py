@@ -111,7 +111,7 @@ class MainWindow(QMainWindow):
         config.belong = self.belongtext.text()
         config.csname = self.csname.text()
         config.defaults['gpsfile'] = self.gpsfile.isChecked()
-        config.turbocharge = self.turbo.isChecked()
+        config.turbocharge = not self.turbo.isChecked()
 
         try:
             with open('defaults.json', 'w') as f:
@@ -215,6 +215,8 @@ class UiJassmMatch(QDialog):
         config.debriefcard_filename = newfilename
         updatecombined = jassm_report_match(config.debriefcard_filename, config.jassmreport_filename)
         if not updatecombined.empty:
+            updatecombined = updatecombined.fillna('')
+            updatecombined = updatecombined.replace('nan', '', regex=True)
             append_df_to_excel(config.debriefcard_filename, updatecombined, sheet_name="Combined", startrow=0, index=False)
             updatefillins(config.debriefcard_filename)
             os.startfile(config.debriefcard_filename)
@@ -396,7 +398,7 @@ def Parse():
         dfJDAMfiltered = dfJDAM.filter(
             ['Record Number', 'Tail', 'wpn', 'Dest', 'TOT', 'TOR', 'BULL', 'TOF', 'WPN Type', 'TGT Name', 'TGT LAT',
              'TGT LONG', 'TGT ELEV', 'PrimeNav', 'XHair', 'PrimeNavAiding', 'Buffers','FOM', 'ALT', 'GTRK', 'IAS',
-             'MHDG', 'TAS', 'LS', 'GS', 'LARstatus','Delay','FCI','Mach'], axis=1)
+             'MHDG', 'TAS', 'LS', 'GS', 'LARstatus','Delay','FCI','Mach','LAT','LONG'], axis=1)
         dfAllWPNS.append(dfJDAMfiltered)
     if len(config.gwd) > 0:
         dfGWD = pd.DataFrame(config.gwd)
@@ -407,7 +409,7 @@ def Parse():
         dfGWDfiltered = dfGWD.filter(
             ['Record Number', 'Tail', 'wpn', 'Dest', 'TOT', 'TOR', 'BULL', 'TOF', 'WPN Type', 'TGT Name', 'TGT LAT',
              'TGT LONG', 'TGT ELEV', 'PrimeNav', 'XHair', 'PrimeNavAiding', 'Buffers','FOM', 'ALT', 'GTRK', 'IAS',
-             'MHDG', 'TAS', 'LS', 'GS', 'LARstatus','Delay','FCI','Mach'], axis=1)
+             'MHDG', 'TAS', 'LS', 'GS', 'LARstatus','Delay','FCI','Mach','LAT','LONG'], axis=1)
         dfAllWPNS.append(dfGWDfiltered)
     if len(config.wcmd) > 0:
         dfWCMD = pd.DataFrame(config.wcmd)
@@ -417,7 +419,7 @@ def Parse():
         dfWCMDfiltered = dfWCMD.filter(
             ['Record Number', 'Tail', 'wpn', 'Dest', 'TOT', 'TOR', 'BULL', 'TOF', 'WPN Type', 'TGT Name', 'TGT LAT',
              'TGT LONG', 'TGT ELEV', 'PrimeNav', 'XHair', 'PrimeNavAiding', 'Buffers','FOM', 'ALT', 'GTRK', 'IAS',
-             'MHDG', 'TAS', 'LS', 'GS', 'LARstatus','Delay','FCI','Mach'], axis=1)
+             'MHDG', 'TAS', 'LS', 'GS', 'LARstatus','Delay','FCI','Mach','LAT','LONG'], axis=1)
         dfAllWPNS.append(dfWCMDfiltered)
     if len(config.jassm) > 0:
         dfJASSM = pd.DataFrame(config.jassm)
@@ -434,7 +436,7 @@ def Parse():
         dfJASSMfiltered = dfJASSM.filter(
             ['Record Number', 'Tail', 'wpn', 'Dest', 'TOT', 'TOR', 'BULL', 'TOF', 'WPN Type', 'TGT Name', 'TGT LAT',
              'TGT LONG', 'TGT ELEV', 'PrimeNav', 'XHair', 'PrimeNavAiding', 'Buffers','FOM', 'ALT', 'GTRK', 'IAS',
-             'MHDG', 'TAS', 'LS', 'GS', 'LARstatus','Delay','FCI','Mach'], axis=1)
+             'MHDG', 'TAS', 'LS', 'GS', 'LARstatus','Delay','FCI','Mach','LAT','LONG'], axis=1)
         dfAllWPNS.append(dfJASSMfiltered)
     if len(config.mald) > 0:
         dfMALD = pd.DataFrame(config.mald)
@@ -451,7 +453,7 @@ def Parse():
         dfMALDfiltered = dfMALD.filter(
             ['Record Number', 'Tail', 'wpn', 'Dest', 'TOT', 'TOR', 'BULL', 'TOF', 'WPN Type', 'TGT Name', 'TGT LAT',
              'TGT LONG', 'TGT ELEV', 'PrimeNav', 'XHair', 'PrimeNavAiding', 'Buffers','FOM', 'ALT', 'GTRK', 'IAS',
-             'MHDG', 'TAS', 'LS', 'GS', 'LARstatus','Delay','FCI','Mach'], axis=1)
+             'MHDG', 'TAS', 'LS', 'GS', 'LARstatus','Delay','FCI','Mach','LAT','LONG'], axis=1)
         dfAllWPNS.append(dfMALDfiltered)
 
 
