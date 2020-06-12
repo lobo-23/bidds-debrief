@@ -90,7 +90,7 @@
      </font>
     </property>
     <property name="text">
-     <string>version 0.6</string>
+     <string>version 1.0</string>
     </property>
    </widget>
    <widget class="QLabel" name="label_8">
@@ -366,6 +366,7 @@
      <string>Help</string>
     </property>
     <addaction name="actionHow_To_Guide"/>
+    <addaction name="actionChangelog"/>
    </widget>
    <addaction name="menuTools"/>
    <addaction name="menuHelp"/>
@@ -379,6 +380,11 @@
   <action name="actionHow_To_Guide">
    <property name="text">
     <string>How To Guide</string>
+   </property>
+  </action>
+  <action name="actionChangelog">
+   <property name="text">
+    <string>Changelog</string>
    </property>
   </action>
  </widget>

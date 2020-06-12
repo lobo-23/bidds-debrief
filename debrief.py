@@ -49,6 +49,9 @@ class MainWindow(QMainWindow):
         self.howtoguide = self.findChild(QAction,'actionHow_To_Guide')
         self.howtoguide.triggered.connect(self.guideopen)
 
+        self.changelog = self.findChild(QAction,'actionChangelog')
+        self.changelog.triggered.connect(self.changelogopen)
+
         try:
             with open('defaults.json') as f:
                 config.defaults = json.load(f)
@@ -68,6 +71,15 @@ class MainWindow(QMainWindow):
         except:
             QMessageBox.question(self, 'Error',
                                                   "Guide not found.",
+                                                  QMessageBox.Ok)
+            return
+    def changelogopen(self):
+        prefixed = [filename for filename in os.listdir('.') if filename.startswith("Changelog") and filename.endswith("pdf")]
+        try:
+            os.startfile(prefixed[-1])
+        except:
+            QMessageBox.question(self, 'Error',
+                                                  "Changelog not found.",
                                                   QMessageBox.Ok)
             return
     def jassmmatch(self):
@@ -276,7 +288,7 @@ class UiMsnPicker(QDialog):
 
             records = [m.start() for m in re.finditer('Mission Event', config.msnData)]
 
-            print('Turbo Mode Activated')
+            print('Partial Sortie Search')
             try:
                 if min(releases)> 30000:
                     K = min(releases)-30000
@@ -287,7 +299,7 @@ class UiMsnPicker(QDialog):
                 stop = records[min(range(len(records)), key=lambda i: abs(records[i] - K))]
                 config.msnData = config.msnData[start:stop]
             except:
-                print('Turbo Mode Error, deactivating...')
+                print('Partial Sortie Search Error, searching full sortie...')
         config.parse_pending = threading.Event()
 
         config.ProgressMsnEvent = 2.3

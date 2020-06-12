@@ -315,6 +315,8 @@ def jassmparse(wpn):
     wpn['TGT ELEV'] = ''
     try:
         wpn['TGT Name'] = 'JASSMGRP_' + str(wpn['Weapon Group ID']).zfill(2) + " " + 'MSN'+ str(wpn['Primary Target ID'])
+        if wpn['Weapon Group ID'] == '0x000000BC':
+            wpn['TGT Name'] = ''
     except:
         wpn['TGT Name'] = ''
 
