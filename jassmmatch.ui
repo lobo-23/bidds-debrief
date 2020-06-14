@@ -31,7 +31,7 @@
     </font>
    </property>
    <property name="toolTip">
-    <string>Copys FDR and DRD File to BIDDS Folder, Open BIDDS</string>
+    <string/>
    </property>
    <property name="text">
     <string>Load</string>
@@ -55,7 +55,7 @@
     </font>
    </property>
    <property name="toolTip">
-    <string>Copys FDR and DRD File to BIDDS Folder, Open BIDDS</string>
+    <string>Select JMPS DTC JASSM Summary Report</string>
    </property>
    <property name="text">
     <string>Load</string>

@@ -1,0 +1,6 @@
+<RCC>
+  <qresource prefix="biddsicon">
+    <file>folder.png</file>
+    <file>bidds.PNG</file>
+  </qresource>
+</RCC>

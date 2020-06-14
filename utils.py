@@ -173,7 +173,7 @@ def to_gpsnmea(df,filename):
         gpsfile.write(str(VTG) + "\n")
     gpsfile.close()
     #os.system('cmd .\output\GPSBabel\gpsbabel -i nmea -f ' + filename + ' -x interpolate,time=10 -o nmea -F "testtrack.gps"')
-    subprocess.Popen(r'explorer /select,'+ filename )
+    #subprocess.Popen(r'explorer /select,'+ filename )
     os.startfile(filename, 'open')
 
 def jassm_report_match(debrief_filename, jassm_report):
@@ -207,6 +207,51 @@ def jassm_report_match(debrief_filename, jassm_report):
                             wpns.at[i, 'BULL'] = bullcalculate(wpns.at[i, 'TGT LAT'], wpns.at[i, 'TGT LONG'])
                         except:
                             wpns.at[i, 'BULL']  = ''
+        wpns = wpns.fillna('')
+        wpns = wpns.replace('nan', '', regex=True)
+
         return wpns
     else:
         return pd.DataFrame()
+
+def jassm_report_match(debrief_filename='none', jassm_report='jrep.xlsm'):
+
+    if debrief_filename == 'none':
+        debrief_filename = QFileDialog.getOpenFileName(self, 'Open Debrief Card Excel File',
+                                    os.path.join(os.path.join(os.environ['USERPROFILE']), 'Desktop'),
+                                    "Excel File (*.xlsx)")
+    if jassm_report == 'none':
+        jassm_report = QFileDialog.getOpenFileName(self, 'Open JMPS JASSM Report Excel File',
+                                    os.path.join(os.path.join(os.environ['USERPROFILE']), 'Desktop'),
+                                    "Excel File (*.xlsx)")
+    jreport = pd.ExcelFile(jassm_report)
+    wpngroups = []
+
+    for sheet in jreport.sheet_names:
+        if 'JASSMGRP' in sheet:
+            print(sheet)
+            df = jreport.parse(sheet, skiprows=5, index_col=None)
+            df['wpngroup'] = str(sheet) + " " + 'MSN'+ df['Msn'].astype(str)
+            wpngroups.append(df)
+    wpns = pd.read_excel(debrief_filename, sheet_name='Combined',index_col=None,na_filter= False)
+    wpns.astype({'TGT LAT':str,'TGT LONG':str,'TGT ELEV':str,'BULL':str}).dtypes
+    wpns['TGT LAT'] = wpns['TGT LAT'].astype(str)
+    wpns['TGT LONG'] = wpns['TGT LONG'].astype(str)
+    wpns['TGT ELEV'] = wpns['TGT ELEV'].astype(str)
+    wpns['BULL'] = wpns['BULL'].astype(str)
+
+    for i, row in wpns.iterrows():
+        for group in wpngroups:
+            for j, rows in group.iterrows():
+                if wpns.at[i,'TGT Name'] == group.at[j,'wpngroup']:
+                    wpns.at[i, 'TGT Name'] = group.at[j,'Mission Name']
+                    wpns.at[i, 'TGT LAT'] = group.at[j, 'Tgt Latitude']
+                    wpns.at[i, 'TGT LONG'] = group.at[j,'Tgt Longitude']
+                    wpns.at[i, 'TGT ELEV'] = str(group.at[j,'Tgt Elev (HAE)']) + "' HAE"
+                    try:
+                        wpns.at[i, 'BULL'] = bullcalculate(wpns.at[i, 'TGT LAT'], wpns.at[i, 'TGT LONG'])
+                    except:
+                        wpns.at[i, 'BULL']  = ''
+    wpns = wpns.fillna('')
+    wpns = wpns.replace('nan', '', regex=True)
+    return wpns

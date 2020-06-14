@@ -75,6 +75,10 @@ def jdamparse(wpn):
         wpn['LONG'] = wpn['Longitude'].replace('  deg', '').replace(':', ' ')
     except:
         wpn['LONG'] = 'ERR'
+    try:
+        wpn['BULLrel'] = bullcalculate(wpn['LAT'],wpn['LONG'])
+    except:
+        wpn['BULLrel'] = ''
 
     # print(wpn['LAT'])
     # print(wpn['LONG'])
@@ -204,6 +208,10 @@ def wcmdparse(wpn):
         wpn['LONG'] = wpn['Longitude'].replace('  deg', '').replace(':', ' ')
     except:
         wpn['LONG'] = 'ERR'
+    try:
+        wpn['BULLrel'] = bullcalculate(wpn['LAT'],wpn['LONG'])
+    except:
+        wpn['BULLrel'] = ''
 
     try:
         wpn['TGT LAT'] = wpn['Target Latitude'].replace('  deg', '').replace(':', ' ').replace('N 0', "N ").replace('S 0', "S ")
@@ -250,6 +258,10 @@ def jassmparse(wpn):
         wpn['ALT'] = str(round(float(wpn['Altitude'].replace('  feet', '').replace('+ ', ''))))
     except:
         wpn['ALT'] = 'ERR'
+    try:
+        wpn['BULLrel'] = bullcalculate(wpn['LAT'],wpn['LONG'])
+    except:
+        wpn['BULLrel'] = ''
 
     #print(wpn['LAT'])
     #print(wpn['LONG'])
@@ -320,7 +332,7 @@ def jassmparse(wpn):
     except:
         wpn['TGT Name'] = ''
 
-    wpn['BULL'] = bullcalculate(wpn['LAT'], wpn['LONG'])
+    wpn['BULL'] = ''
     #print(wpn['TGT LAT'])
     #print(wpn['TGT LONG'])
     #print(wpn['TGT ELEV'])
@@ -349,6 +361,10 @@ def maldparse(wpn):
         wpn['ALT'] = str(round(float(wpn['Altitude'].replace('  feet', '').replace('+ ', ''))))
     except:
         wpn['ALT'] = 'ERR'
+    try:
+        wpn['BULLrel'] = bullcalculate(wpn['LAT'],wpn['LONG'])
+    except:
+        wpn['BULLrel'] = ''
 
     #print(wpn['LAT'])
     #print(wpn['LONG'])
@@ -469,6 +485,10 @@ def gwdparse(wpn):
         wpn['LONG'] = wpn['Aircraft Longitude'].replace('  deg', '').replace(':', ' ')
     except:
         wpn['LONG'] = 'ERR'
+    try:
+        wpn['BULLrel'] = bullcalculate(wpn['LAT'],wpn['LONG'])
+    except:
+        wpn['BULLrel'] = ''
 
 
 

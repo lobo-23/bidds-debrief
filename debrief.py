@@ -14,6 +14,8 @@ from pyproj import _datadir, datadir
 import config
 import json
 import csv
+import resource
+from pathlib import Path
 
 
 class External(QThread):
@@ -24,6 +26,7 @@ class External(QThread):
         while config.ProgressMsnEvent < 100:
             time.sleep(1)
             self.countChanged.emit(config.ProgressMsnEvent)
+
 class MainWindow(QMainWindow):
     def __init__(self, parent=None):
         super(MainWindow, self).__init__(parent) # Call the inherited classes __init__ method
@@ -46,11 +49,23 @@ class MainWindow(QMainWindow):
         self.manualjassmmatch = self.findChild(QAction,'actionJASSM_Report_Match')
         self.manualjassmmatch.triggered.connect(self.jassmmatch)
 
+        self.bullupdatebutton = self.findChild(QAction,'actionUpdate_Bullseyes')
+        self.bullupdatebutton.triggered.connect(self.bullupdate)
+
         self.howtoguide = self.findChild(QAction,'actionHow_To_Guide')
         self.howtoguide.triggered.connect(self.guideopen)
 
         self.changelog = self.findChild(QAction,'actionChangelog')
         self.changelog.triggered.connect(self.changelogopen)
+
+        self.BIDDS = self.findChild(QPushButton, 'pushButton_BIDDS')
+        self.BIDDS.clicked.connect(self.BIDDSopen)
+
+        self.Folder = self.findChild(QPushButton, 'pushButton_Folder')
+        self.Folder.clicked.connect(self.FolderCreate)
+
+        self.BIDDSDRD = self.findChild(QAction,'actionCopy_DRD_to_BIDDS')
+        self.BIDDSDRD.triggered.connect(self.BIDDSfolderopen)
 
         try:
             with open('defaults.json') as f:
@@ -59,6 +74,10 @@ class MainWindow(QMainWindow):
                 self.belattext.setText(config.defaults['BElat'])
                 self.belongtext.setText(config.defaults['BElon'])
                 self.csname.setText(config.defaults['CS'])
+                if os.path.isdir(config.defaults['defaultpath']):
+                    config.outputpath = config.defaults['defaultpath']
+                else:
+                    config.outputpath = os.path.join(os.path.join(os.environ['USERPROFILE']), 'Desktop')
 
         except:
             pass
@@ -101,6 +120,57 @@ class MainWindow(QMainWindow):
         self.matchpick = UiJassmMatch(self)
         self.matchpick.show()
 
+    def bullupdate(self):
+        config.bename = self.benametext.text()
+        config.belat = self.belattext.text()
+        config.belong = self.belongtext.text()
+        if len(config.bename)>0 or len(config.belat)>0 or len(config.belong)>0:
+            try:
+                config.becoord = string2latlon(config.belat, config.belong, 'H% %d% %M')
+            except:
+                config.becoord = QMessageBox.question(self, 'Bullseye Error',
+                                                    "Coordinate format not recognized.\n N/S DD MM.MMMM, E/W DDD MM.MMMM",
+                                                    QMessageBox.Ok)
+                print('Bullseye Lat/Long Error: Input DD MM.MMMM format.')
+                return
+        else:
+            config.becoord = None
+        selectedfile = QFileDialog.getOpenFileName(self, 'Select Debrief Card Excel File',
+                                                   config.outputpath,
+                                                   "Excel File (*.xlsx)")
+        if len(selectedfile[0])> 0:
+            debriefcard = pd.ExcelFile(selectedfile[0])
+            for sheet in debriefcard.sheet_names:
+                if 'Combined' in sheet:
+                    wpns = pd.read_excel(debriefcard, sheet_name='Combined', index_col=None, na_filter=False)
+                    wpns.astype({'TGT LAT': str, 'TGT LONG': str, 'TGT ELEV': str, 'BULL': str,'Release LAT': str, 'Release LONG': str,'Release Bull': str}).dtypes
+
+                    wpns['TGT LAT'] = wpns['TGT LAT'].astype(str)
+                    wpns['TGT LONG'] = wpns['TGT LONG'].astype(str)
+                    wpns['BULL'] = wpns['TGT LAT'].astype(str)
+
+                    wpns['Release LAT'] = wpns['Release LAT'].astype(str)
+                    wpns['Release LONG'] = wpns['Release LONG'].astype(str)
+                    wpns['Release Bull'] = wpns['Release Bull'].astype(str)
+
+                    for i, row in wpns.iterrows():
+                        try:
+                            wpns.at[i, 'BULL'] = bullcalculate(wpns.at[i, 'TGT LAT'], wpns.at[i, 'TGT LONG'])
+                        except:
+                            wpns.at[i, 'BULL'] = ''
+                        #try:
+                        wpns.at[i, 'Release Bull'] = bullcalculate(wpns.at[i, 'Release LAT'], wpns.at[i, 'Release LONG'])
+                        #except:
+                        #    wpns.at[i, 'Release Bull'] = ''
+
+                    wpns = wpns.fillna('')
+                    wpns = wpns.replace('nan', '', regex=True)
+
+                    append_df_to_excel(debriefcard, wpns, sheet_name="Combined", startrow=0,
+                                       index=False)
+                    os.startfile(debriefcard)
+
+
     def onCountChanged(self, value):
         self.progressbar.setValue(value)
         if value == 95:
@@ -110,10 +180,12 @@ class MainWindow(QMainWindow):
                                      QMessageBox.Yes | QMessageBox.No)
             if config.jassmmatch == QMessageBox.Yes:
                 selectedfile = QFileDialog.getOpenFileName(self, 'Open JMPS JASSM Report Excel File',
-                                            os.path.join(os.path.join(os.environ['USERPROFILE']), 'Desktop'),
+                                            config.outputpath,
                                             "Excel File (*.xlsm)")
                 if len(selectedfile[0]) > 0:
                     config.jassmreport_filename = selectedfile[0]
+                else:
+                    config.jassmreport_filename = False
             else:
                 config.jassmreport_filename = False
 
@@ -122,18 +194,11 @@ class MainWindow(QMainWindow):
         config.belat = self.belattext.text()
         config.belong = self.belongtext.text()
         config.csname = self.csname.text()
+
         config.defaults['gpsfile'] = self.gpsfile.isChecked()
         config.turbocharge = not self.turbo.isChecked()
 
-        try:
-            with open('defaults.json', 'w') as f:
-                config.defaults['BEname'] = config.bename
-                config.defaults['BElat'] = config.belat
-                config.defaults['BElon'] = config.belong
-                config.defaults['CS'] = ''.join([i for i in config.csname if not i.isdigit()])
-                json.dump(config.defaults,f)
-        except:
-            pass
+
 
         if len(config.bename)>0 or len(config.belat)>0 or len(config.belong)>0:
             try:
@@ -155,12 +220,23 @@ class MainWindow(QMainWindow):
 
 
         config.filename = QFileDialog.getOpenFileName(self, 'Open TXT file',
-                                            os.path.join(os.path.join(os.environ['USERPROFILE']), 'Desktop'), "Text File (*.txt)")
+                                            config.outputpath, "Text File (*.txt)")
         #config.filename = QFileDialog.getOpenFileName(self, 'Open TXT file',
          #                                   os.path.join(os.getcwd(),'textfiles'), "Text File (*.txt)")
 
 
         if len(config.filename[0]) > 0:
+            config.outputpath = os.path.dirname(config.filename[0])
+            try:
+                with open('defaults.json', 'w') as f:
+                    config.defaults['BEname'] = config.bename
+                    config.defaults['BElat'] = config.belat
+                    config.defaults['BElon'] = config.belong
+                    config.defaults['CS'] = ''.join([i for i in config.csname if not i.isdigit()])
+                    config.defaults['defaultpath'] = config.outputpath
+                    json.dump(config.defaults, f)
+            except:
+                pass
             self.msnpicker = UiMsnPicker(self)
             self.msnpicker.show()
 
@@ -169,10 +245,76 @@ class MainWindow(QMainWindow):
             self.calc.start()
 
 
-    def BIDDSLoadPressed(self):
-        copyDirectory(r'.\Files\BIDDS', "C:\BIDDS")
-        os.startfile('C:\BIDDS\BIDDS.exe')
+    def BIDDSopen(self):
+        try:
+            os.startfile(config.defaults['bidds'])
+        except:
+            QMessageBox.question(self, 'File Error',
+                                 "Unable to find BIDDS Program located at " + str(config.defaults['bidds']) ,
+                                 QMessageBox.Ok)
 
+    def FolderCreate(self):
+        config.csname = self.csname.text()
+        basefolder = config.defaults['savepath']
+        foldername = datetime.datetime.now().strftime("%Y%m%d") + ' ' + config.csname
+        try:
+            if not os.path.isdir(basefolder):
+                basefolder = 'Desktop'
+            if basefolder == 'Desktop':
+                basefolder = os.path.join(os.path.join(os.environ['USERPROFILE']), 'Desktop')
+
+            basefolder = os.path.join(basefolder, config.defaults['savefolder'])
+            sortiefolder = os.path.join(basefolder, foldername)
+            Path(sortiefolder).mkdir(parents=True, exist_ok=True)
+
+            if os.path.isdir(sortiefolder):
+                os.startfile(sortiefolder)
+            config.outputpath = sortiefolder
+        except:
+            QMessageBox.question(self, 'Folder Error',
+                                 "Unable to create folder \nBase Folder: " + str(basefolder)+"\nSortie Folder: "+ str(sortiefolder),
+                                 QMessageBox.Ok)
+
+    def BIDDSfolderopen(self):
+        try:
+            biddspath, tail = os.path.split(config.defaults['bidds'])
+            if os.path.isdir(biddspath):
+                os.startfile(biddspath)
+        except:
+            QMessageBox.question(self, 'File Error',
+                                 "Unable to find BIDDS Program located at " + str(config.defaults['bidds']) ,
+                                 QMessageBox.Ok)
+
+"""
+            CopyConfirm = QMessageBox.question(self, 'Copy DRD Files',
+                                     "Would you like to update the BIDDS folder DRD files with new ones?" ,
+                                     QMessageBox.Yes|QMessageBox.No)
+            if CopyConfirm ==QMessageBox.Yes:
+                selectedFolder = QFileDialog.getExistingDirectory(self, 'Select Folder with new DRD files',
+                                                           config.outputpath)
+                count =0
+                if len(selectedFolder[0]) > 0:
+                    for basename in os.listdir(selectedFolder):
+                        if basename.endswith('.drd'):
+                            pathname = os.path.join(selectedFolder, basename)
+                            destfile = os.path.join(biddspath, basename)
+                            if os.path.isfile(pathname):
+                                if os.path.exists(destfile):
+                                    try:
+                                        os.remove(destfile)
+                                    except PermissionError as exc:
+                                        os.chmod(destfile, 0o777)
+                                        os.remove(destfile)
+                                shutil.copy2(pathname, biddspath)
+                                count += 1
+                QMessageBox.question(self, 'DRD Copy',
+                                     f"DRD Files copied: {count}.",
+                                     QMessageBox.Ok)
+        else:
+            QMessageBox.question(self, 'File Error',
+                                 "Unable to find BIDDS Program located at " + str(config.defaults['bidds']) ,
+                                 QMessageBox.Ok)
+"""
 class Worker(QObject):
     """
     Must derive from QObject in order to emit signals, connect slots to other signals, and operate in a QThread.
@@ -236,7 +378,7 @@ class UiJassmMatch(QDialog):
         self.repaint()
     def debriefpicker(self):
         selectedfile = QFileDialog.getOpenFileName(self, 'Open Debrief Card to Pair',
-                                                   os.path.join(os.path.join(os.environ['USERPROFILE']), 'Desktop'),
+                                                   config.outputpath,
                                                    "Excel File (*.xlsx)")
         if len(selectedfile[0]) > 0:
             config.debriefcard_filename = selectedfile[0]
@@ -244,7 +386,7 @@ class UiJassmMatch(QDialog):
                 self.match.setEnabled(True)
     def jassmreportpicker(self):
         selectedfile = QFileDialog.getOpenFileName(self, 'Open JMPS JASSM Report Excel File',
-                                                   os.path.join(os.path.join(os.environ['USERPROFILE']), 'Desktop'),
+                                                   config.outputpath,
                                                    "Excel File (*.xlsm)")
         if len(selectedfile[0]) > 0:
             config.jassmreport_filename = selectedfile[0]
@@ -410,7 +552,7 @@ def Parse():
         dfJDAMfiltered = dfJDAM.filter(
             ['Record Number', 'Tail', 'wpn', 'Dest', 'TOT', 'TOR', 'BULL', 'TOF', 'WPN Type', 'TGT Name', 'TGT LAT',
              'TGT LONG', 'TGT ELEV', 'PrimeNav', 'XHair', 'PrimeNavAiding', 'Buffers','FOM', 'ALT', 'GTRK', 'IAS',
-             'MHDG', 'TAS', 'LS', 'GS', 'LARstatus','Delay','FCI','Mach','LAT','LONG'], axis=1)
+             'MHDG', 'TAS', 'LS', 'GS', 'LARstatus','Delay','FCI','Mach','LAT','LONG','BULLrel'], axis=1)
         dfAllWPNS.append(dfJDAMfiltered)
     if len(config.gwd) > 0:
         dfGWD = pd.DataFrame(config.gwd)
@@ -421,7 +563,7 @@ def Parse():
         dfGWDfiltered = dfGWD.filter(
             ['Record Number', 'Tail', 'wpn', 'Dest', 'TOT', 'TOR', 'BULL', 'TOF', 'WPN Type', 'TGT Name', 'TGT LAT',
              'TGT LONG', 'TGT ELEV', 'PrimeNav', 'XHair', 'PrimeNavAiding', 'Buffers','FOM', 'ALT', 'GTRK', 'IAS',
-             'MHDG', 'TAS', 'LS', 'GS', 'LARstatus','Delay','FCI','Mach','LAT','LONG'], axis=1)
+             'MHDG', 'TAS', 'LS', 'GS', 'LARstatus','Delay','FCI','Mach','LAT','LONG','BULLrel'], axis=1)
         dfAllWPNS.append(dfGWDfiltered)
     if len(config.wcmd) > 0:
         dfWCMD = pd.DataFrame(config.wcmd)
@@ -431,7 +573,7 @@ def Parse():
         dfWCMDfiltered = dfWCMD.filter(
             ['Record Number', 'Tail', 'wpn', 'Dest', 'TOT', 'TOR', 'BULL', 'TOF', 'WPN Type', 'TGT Name', 'TGT LAT',
              'TGT LONG', 'TGT ELEV', 'PrimeNav', 'XHair', 'PrimeNavAiding', 'Buffers','FOM', 'ALT', 'GTRK', 'IAS',
-             'MHDG', 'TAS', 'LS', 'GS', 'LARstatus','Delay','FCI','Mach','LAT','LONG'], axis=1)
+             'MHDG', 'TAS', 'LS', 'GS', 'LARstatus','Delay','FCI','Mach','LAT','LONG','BULLrel'], axis=1)
         dfAllWPNS.append(dfWCMDfiltered)
     if len(config.jassm) > 0:
         dfJASSM = pd.DataFrame(config.jassm)
@@ -448,7 +590,7 @@ def Parse():
         dfJASSMfiltered = dfJASSM.filter(
             ['Record Number', 'Tail', 'wpn', 'Dest', 'TOT', 'TOR', 'BULL', 'TOF', 'WPN Type', 'TGT Name', 'TGT LAT',
              'TGT LONG', 'TGT ELEV', 'PrimeNav', 'XHair', 'PrimeNavAiding', 'Buffers','FOM', 'ALT', 'GTRK', 'IAS',
-             'MHDG', 'TAS', 'LS', 'GS', 'LARstatus','Delay','FCI','Mach','LAT','LONG'], axis=1)
+             'MHDG', 'TAS', 'LS', 'GS', 'LARstatus','Delay','FCI','Mach','LAT','LONG','BULLrel'], axis=1)
         dfAllWPNS.append(dfJASSMfiltered)
     if len(config.mald) > 0:
         dfMALD = pd.DataFrame(config.mald)
@@ -465,7 +607,7 @@ def Parse():
         dfMALDfiltered = dfMALD.filter(
             ['Record Number', 'Tail', 'wpn', 'Dest', 'TOT', 'TOR', 'BULL', 'TOF', 'WPN Type', 'TGT Name', 'TGT LAT',
              'TGT LONG', 'TGT ELEV', 'PrimeNav', 'XHair', 'PrimeNavAiding', 'Buffers','FOM', 'ALT', 'GTRK', 'IAS',
-             'MHDG', 'TAS', 'LS', 'GS', 'LARstatus','Delay','FCI','Mach','LAT','LONG'], axis=1)
+             'MHDG', 'TAS', 'LS', 'GS', 'LARstatus','Delay','FCI','Mach','LAT','LONG','BULLrel'], axis=1)
         dfAllWPNS.append(dfMALDfiltered)
 
 
@@ -473,8 +615,8 @@ def Parse():
     print('\r{}% done...'.format(config.ProgressMsnEvent), end='', flush=True)
 
     newfilename = config.csname + ' Debrief Card ' + datetime.datetime.now().strftime('%H%M%S') + '.xlsx'
-    newfilepath = os.path.join('output', newfilename)
-    shutil.copy('Debrief Sheet Template v4.xlsx', newfilepath)
+    newfilepath = os.path.join(config.outputpath, newfilename)
+    shutil.copy('Debrief Sheet Template.xlsx', newfilepath)
     updatefillins(newfilepath)
 
     if config.count > 0:
@@ -498,7 +640,10 @@ def Parse():
         if config.jassmmatch == QMessageBox.Yes and config.jassmreport_filename != False:
             updatecombined = jassm_report_match(config.debriefcard_filename,config.jassmreport_filename)
             if not updatecombined.empty:
+                updatecombined = updatecombined.fillna('')
+                updatecombined = updatecombined.replace('nan', '', regex=True)
                 append_df_to_excel(newfilepath, updatecombined, sheet_name="Combined", startrow=0, index=False)
+
     config.ProgressMsnEvent = 99
     if config.defaults['gpsfile']:
         try:

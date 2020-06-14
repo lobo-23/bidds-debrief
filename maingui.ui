@@ -6,8 +6,8 @@
    <rect>
     <x>0</x>
     <y>0</y>
-    <width>684</width>
-    <height>339</height>
+    <width>641</width>
+    <height>318</height>
    </rect>
   </property>
   <property name="sizePolicy">
@@ -27,7 +27,7 @@
    <widget class="QFrame" name="frame">
     <property name="geometry">
      <rect>
-      <x>40</x>
+      <x>20</x>
       <y>40</y>
       <width>341</width>
       <height>191</height>
@@ -43,7 +43,7 @@
    <widget class="QLineEdit" name="line_BEName">
     <property name="geometry">
      <rect>
-      <x>180</x>
+      <x>160</x>
       <y>100</y>
       <width>171</width>
       <height>31</height>
@@ -62,8 +62,8 @@
    <widget class="QProgressBar" name="progressBar">
     <property name="geometry">
      <rect>
-      <x>40</x>
-      <y>260</y>
+      <x>20</x>
+      <y>250</y>
       <width>601</width>
       <height>23</height>
      </rect>
@@ -75,7 +75,7 @@
    <widget class="QLabel" name="label_5">
     <property name="geometry">
      <rect>
-      <x>570</x>
+      <x>550</x>
       <y>10</y>
       <width>81</width>
       <height>21</height>
@@ -96,7 +96,7 @@
    <widget class="QLabel" name="label_8">
     <property name="geometry">
      <rect>
-      <x>60</x>
+      <x>40</x>
       <y>180</y>
       <width>101</width>
       <height>31</height>
@@ -117,7 +117,7 @@
    <widget class="QLineEdit" name="line_BELong">
     <property name="geometry">
      <rect>
-      <x>180</x>
+      <x>160</x>
       <y>180</y>
       <width>171</width>
       <height>31</height>
@@ -136,7 +136,7 @@
    <widget class="QLabel" name="label_6">
     <property name="geometry">
      <rect>
-      <x>60</x>
+      <x>40</x>
       <y>100</y>
       <width>101</width>
       <height>31</height>
@@ -157,7 +157,7 @@
    <widget class="QLabel" name="label_7">
     <property name="geometry">
      <rect>
-      <x>60</x>
+      <x>40</x>
       <y>140</y>
       <width>101</width>
       <height>31</height>
@@ -178,7 +178,7 @@
    <widget class="QLabel" name="label_9">
     <property name="geometry">
      <rect>
-      <x>60</x>
+      <x>40</x>
       <y>50</y>
       <width>291</width>
       <height>31</height>
@@ -199,7 +199,7 @@
    <widget class="QFrame" name="frame_2">
     <property name="geometry">
      <rect>
-      <x>400</x>
+      <x>380</x>
       <y>40</y>
       <width>241</width>
       <height>191</height>
@@ -235,9 +235,9 @@
     <widget class="QPushButton" name="pushButton_TXTLoad">
      <property name="geometry">
       <rect>
-       <x>50</x>
+       <x>120</x>
        <y>140</y>
-       <width>151</width>
+       <width>111</width>
        <height>41</height>
       </rect>
      </property>
@@ -296,14 +296,14 @@
     <widget class="QCheckBox" name="cbGPS">
      <property name="geometry">
       <rect>
-       <x>150</x>
+       <x>140</x>
        <y>110</y>
        <width>71</width>
        <height>17</height>
       </rect>
      </property>
      <property name="text">
-      <string>GPS File</string>
+      <string>GPS Trail</string>
      </property>
      <property name="checked">
       <bool>false</bool>
@@ -312,7 +312,7 @@
     <widget class="QCheckBox" name="cbTurbo">
      <property name="geometry">
       <rect>
-       <x>50</x>
+       <x>40</x>
        <y>110</y>
        <width>71</width>
        <height>17</height>
@@ -325,11 +325,57 @@
       <bool>false</bool>
      </property>
     </widget>
+    <widget class="QPushButton" name="pushButton_BIDDS">
+     <property name="geometry">
+      <rect>
+       <x>70</x>
+       <y>140</y>
+       <width>41</width>
+       <height>41</height>
+      </rect>
+     </property>
+     <property name="text">
+      <string/>
+     </property>
+     <property name="icon">
+      <iconset resource="resource.qrc">
+       <normaloff>:/biddsicon/bidds.PNG</normaloff>:/biddsicon/bidds.PNG</iconset>
+     </property>
+     <property name="iconSize">
+      <size>
+       <width>32</width>
+       <height>33</height>
+      </size>
+     </property>
+    </widget>
+    <widget class="QPushButton" name="pushButton_Folder">
+     <property name="geometry">
+      <rect>
+       <x>20</x>
+       <y>140</y>
+       <width>41</width>
+       <height>41</height>
+      </rect>
+     </property>
+     <property name="text">
+      <string/>
+     </property>
+     <property name="icon">
+      <iconset resource="resource.qrc">
+       <normaloff>:/biddsicon/folder.png</normaloff>:/biddsicon/folder.png</iconset>
+     </property>
+     <property name="iconSize">
+      <size>
+       <width>36</width>
+       <height>36</height>
+      </size>
+     </property>
+    </widget>
    </widget>
    <widget class="QLineEdit" name="line_BELat">
     <property name="geometry">
      <rect>
-      <x>180</x>
+      <x>160</x>
       <y>140</y>
       <width>171</width>
       <height>31</height>
@@ -351,7 +397,7 @@
     <rect>
      <x>0</x>
      <y>0</y>
-     <width>684</width>
+     <width>641</width>
      <height>21</height>
     </rect>
    </property>
@@ -360,16 +406,18 @@
      <string>Tools</string>
     </property>
     <addaction name="actionJASSM_Report_Match"/>
+    <addaction name="actionUpdate_Bullseyes"/>
+    <addaction name="actionCopy_DRD_to_BIDDS"/>
    </widget>
    <widget class="QMenu" name="menuHelp">
     <property name="title">
-     <string>Help</string>
+     <string>Guide</string>
     </property>
     <addaction name="actionHow_To_Guide"/>
     <addaction name="actionChangelog"/>
    </widget>
-   <addaction name="menuTools"/>
    <addaction name="menuHelp"/>
+   <addaction name="menuTools"/>
   </widget>
   <widget class="QStatusBar" name="statusbar"/>
   <action name="actionJASSM_Report_Match">
@@ -387,7 +435,24 @@
     <string>Changelog</string>
    </property>
   </action>
+  <action name="actionUpdate_Bullseyes">
+   <property name="text">
+    <string>Update Bullseyes</string>
+   </property>
+  </action>
+  <action name="actionOpen_BIDDS">
+   <property name="text">
+    <string>Open BIDDS</string>
+   </property>
+  </action>
+  <action name="actionCopy_DRD_to_BIDDS">
+   <property name="text">
+    <string>Open BIDDS Folder</string>
+   </property>
+  </action>
  </widget>
- <resources/>
+ <resources>
+  <include location="resource.qrc"/>
+ </resources>
  <connections/>
 </ui>

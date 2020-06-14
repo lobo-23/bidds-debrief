@@ -1,5 +1,6 @@
 
 global filename
+global outputpath
 global msnData
 global ranges
 
