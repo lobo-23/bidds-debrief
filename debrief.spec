@@ -4,7 +4,9 @@ block_cipher = None
 
 added_files = [
     ( '.\*.ui', '.' ),
+    ( '.\*.pdf', '.' ),
     ( '.\*.ico', '.'),
+    ( '.\License.txt', '.'),
     ( '.\wpncodes.csv', '.'),
     ( '.\*.json', '.'),
     ( '.\pyqtspinner', 'pyqtspinner' ),

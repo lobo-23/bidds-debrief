@@ -17,6 +17,8 @@ import csv
 import resource
 from pathlib import Path
 
+QApplication.setAttribute(Qt.AA_EnableHighDpiScaling, True) #enable highdpi scaling
+QApplication.setAttribute(Qt.AA_UseHighDpiPixmaps, True) #use highdpi icons
 
 class External(QThread):
     countChanged = pyqtSignal(int)
@@ -419,7 +421,6 @@ class UiMsnPicker(QDialog):
         j = int(config.ranges[idx][1])
         config.msnData = config.msnData[i:j]
         if config.turbocharge == True:
-
             larmald = [m.start() for m in re.finditer('Change of IR IZ LAR', config.msnData)]
             larjassm = [m.start() for m in re.finditer('Change of In-Range/In-Zone Status', config.msnData)]
             rel = [m.start() for m in re.finditer('Weapon Scoring', config.msnData)]
@@ -442,6 +443,7 @@ class UiMsnPicker(QDialog):
                 config.msnData = config.msnData[start:stop]
             except:
                 print('Partial Sortie Search Error, searching full sortie...')
+
         config.parse_pending = threading.Event()
 
         config.ProgressMsnEvent = 2.3

@@ -159,7 +159,7 @@ def parselar():
     # Improve?
     eventValue = SkipTo(lineEnd)
     eventData = NotAny("Change of In-Range/In-Zone Status") + NotAny("Change of IR IZ LAR") + NotAny("Launch") + NotAny(
-        "Gravity Weapon Scoring") + NotAny("Weapon Launch") + NotAny('Weapon Jettison') + Group(
+        "Gravity Weapon Scoring") + NotAny("Direct Target")+ NotAny("Weapon Launch") + NotAny('Weapon Jettison') + Group(
         eventKey + Suppress(":") + eventValue) + Suppress(lineEnd())
     recordBlock = record + OneOrMore(eventData) + msnEventExpanded
 
@@ -325,7 +325,10 @@ def evnparse(evn):
         evn['TAS'] = 'ERR'
 
     evn['GS'] = round(float(evn['Present Ground Speed'].replace('  knots', '')))
-    evn['Mach'] = float(evn['Mach Value'])
+    try:
+        evn['Mach'] = float(evn['Mach Value'])
+    except:
+        evn['Mach'] = ''
     # print(wpn['GS'])
     evn['PrimeNav'] = evn['Prime Data Source'].replace(' ','')
     # print(wpn['PrimeNav'])
