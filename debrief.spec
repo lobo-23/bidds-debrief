@@ -6,6 +6,7 @@ added_files = [
     ( '.\*.ui', '.' ),
     ( '.\*.pdf', '.' ),
     ( '.\*.ico', '.'),
+    ( '.\SetupBIDDSv4.exe', '.'),
     ( '.\License.txt', '.'),
     ( '.\wpncodes.csv', '.'),
     ( '.\*.json', '.'),
