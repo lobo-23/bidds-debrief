@@ -7,7 +7,6 @@ import numpy as np
 
 
 
-
 def msnsplit():
     start_time = timeit.default_timer()
 
@@ -375,20 +374,28 @@ def larreleasepair(lar, release):
     release['Time (UTC)']= pd.to_datetime(release['Time (UTC)'])
     release['TOR'] = pd.to_datetime(release['TOR'])
     lar['Time (UTC)'] = pd.to_datetime(lar['Date'] + ' ' + lar['Time (UTC)'])
+    lar['Time (UTC)'] = lar['Time (UTC)']
     lar['TOF'] = pd.to_timedelta(lar['TOF'])
 
     for i, row in release.iterrows():
         try:
             pairedlars = lar[lar['LS'] == row.LS]
             TOF = pairedlars['TOF'][pairedlars.index[-1]]
-            TOFtimestamp = pairedlars['Time (UTC)'][pairedlars.index[-1]]
-            TimeVariation = release.at[i,'Time (UTC)'] - TOFtimestamp #Difference between LARevent and TOR
-            if TOF > pd.Timedelta(12,unit='hours'):
-                TOF = TOF - pd.Timedelta(12,unit='hours')
-            release.at[i,'TOF'] = strfdelta(TOF,"{hours}:{minutes}:{seconds}")
-            release.at[i, 'TOT'] = release.at[i,'Time (UTC)'] + (TOF - TimeVariation)
+            if TOF == pd.to_timedelta('00:00:00'):
+                release.at[i, 'TOF'] = ''
+                release.at[i, 'TOT'] = ''
+            else:
+                TOFtimestamp = pairedlars['Time (UTC)'][pairedlars.index[-1]]
+                TimeVariation = release.at[i,'Time (UTC)'] - TOFtimestamp #Difference between LARevent and TOR
+                if TOF > pd.Timedelta(12,unit='hours'):
+                    TOF = TOF - pd.Timedelta(12,unit='hours')
+                else:
+                    release.at[i,'TOF'] = strfdelta(TOF,"{hours}:{minutes}:{seconds}")
+                    release.at[i, 'TOT'] = release.at[i,'Time (UTC)'] + (TOF - TimeVariation)
         except:
-            pass
+            release.at[i, 'TOF'] = ''
+            release.at[i, 'TOT'] = ''
+
         """
         print(row.LS)
         print(TOFtimestamp)
@@ -399,6 +406,17 @@ def larreleasepair(lar, release):
         print(release.at[i, 'TOT'])
         """
     return release
+
+"""
+lars = pd.read_csv('lars.csv')
+mald = pd.read_csv('mald.csv')
+
+mald = larreleasepair(lars,mald)
+mald = mald.fillna('')
+mald = mald.replace('nan', '', regex=True)
+print(mald)
+"""
+
 def msnevnpair(input, msnevents):
 
     input['Time (UTC)'] = pd.to_datetime(input['Date'] + ' ' + input['Time (UTC)'])
@@ -438,13 +456,21 @@ def msnevnpair(input, msnevents):
         input.insert(len(input.columns), "GTRK", GTRK, False)
     except:
         pass
-    input.insert(len(input.columns), "FCI", FCI, False)
+
+    try:
+        input.insert(len(input.columns), "FCI", FCI, False)
+    except:
+        pass
+
     input.insert(len(input.columns), "Mach", Mach, False)
     input.insert(len(input.columns), "Temp", Temp, False)
     input.insert(len(input.columns), "WindDir", WindDir, False)
     input.insert(len(input.columns), "WindSpeed", WindSpeed, False)
 
-    input.insert(len(input.columns), "TGT NAME", "", False)
+    try:
+        input.insert(len(input.columns), "TGT Name", "", False)
+    except:
+        pass
     try:
         input.insert(len(input.columns), "Buffers", Buffers, False)
     except:

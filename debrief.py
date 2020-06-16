@@ -443,6 +443,11 @@ class UiMsnPicker(QDialog):
                 config.msnData = config.msnData[start:stop]
             except:
                 print('Partial Sortie Search Error, searching full sortie...')
+        else:
+            larmald = [m.start() for m in re.finditer('Change of IR IZ LAR', config.msnData)]
+            larjassm = [m.start() for m in re.finditer('Change of In-Range/In-Zone Status', config.msnData)]
+
+            config.larparse = len(larmald + larjassm) >0
 
         config.parse_pending = threading.Event()
 
@@ -598,13 +603,14 @@ def Parse():
         dfMALD = pd.DataFrame(config.mald)
         #dfMALD.to_csv('mald.csv')
         msnevnpair(dfMALD, config.dfMsnEvents)
-        if len(config.LARmald) > 0:
-            dfLARmald = pd.DataFrame(config.LARmald)
-            allLARs.append(dfLARmald)
-            try:
-                larreleasepair(dfLARmald,dfMALD)
-            except:
-                pass
+        if hasattr(config, 'LARmald'):
+            if len(config.LARmald) > 0:
+                dfLARmald = pd.DataFrame(config.LARmald)
+                allLARs.append(dfLARmald)
+                try:
+                    larreleasepair(dfLARmald,dfMALD)
+                except:
+                    pass
         allWPNs.append(dfMALD)
         dfMALDfiltered = dfMALD.filter(
             ['Record Number', 'Tail', 'wpn', 'Dest', 'TOT', 'TOR', 'BULL', 'TOF', 'WPN Type', 'TGT Name', 'TGT LAT',

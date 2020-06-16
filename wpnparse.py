@@ -61,6 +61,9 @@ def jdamparse(wpn):
     # print(wpn['WPN Type'])
     if '0x00' in wpn['TGT Name']:
         wpn['TGT Name'] = ''
+
+    if not 'TGT Name' in wpn:
+        wpn['TGT Name'] = ''
     try:
         wpn['ALT'] = str(round(float(wpn['Altitude'].replace('  feet', '').replace('+ ', ''))))
     except:
@@ -227,6 +230,10 @@ def wcmdparse(wpn):
         wpn['TGT ELEV'] = str(round(wpn['TGT ELEV'])) + "' " + wpn['Target Alt Ref']
     except:
         wpn['TGT ELEV'] = 'ERR'
+
+    if not 'TGT Name' in wpn:
+        wpn['TGT Name'] = ''
+
     try:
         wpn['BULL'] = bullcalculate(wpn['TGT LAT'], wpn['TGT LONG'])
     except:
@@ -406,10 +413,20 @@ def maldparse(wpn):
     #print(wpn['TOF'])
     #print(wpn['TOT'])
     try:
-        wpn['WPN Type'] = wpn['Store Description'].replace('ADM-160B', 'MALD').replace('ADM-160C', 'MALDJ')
+        if 'Z2' in wpn['Weapon Type'] or 'Z1' in wpn['Weapon Type']:
+            wpn['WPN Type'] = wpn['Weapon Type'].replace('Z2', 'MALDJ').replace('Z1', 'MALD')
+        else:
+            if 'ADM-160B' in wpn['Store Description']:
+                wpn['WPN Type'] = 'MALD'
+            else:
+                if 'ADM-160C' in wpn['Store Description']:
+                    wpn['WPN Type'] = 'MALD'
+                else:
+                    wpn['WPN Type'] = wpn['Store Description']
     except:
         wpn['WPN Type'] = wpn['Weapon Type'].replace('Z2','MALDJ').replace('Z1','MALD')
     #print(wpn['WPN Type'])
+
 
     try:
         wpn['TGT LAT'] = wpn['EP Latitude'].replace('  deg', '').replace(':', ' ').replace('N 0', "N ").replace('S 0',
@@ -424,6 +441,15 @@ def maldparse(wpn):
         wpn['TGT ELEV'] = str(round(float(wpn['EP Elevation'].replace('  feet', '').replace('+ ', '')))) + "'"
     except:
         wpn['TGT ELEV'] = 'ERR'
+
+    if '99 59' in wpn['TGT LAT']:
+        wpn['TGT LAT'] = ''
+    if '99 59' in wpn['TGT LONG']:
+        wpn['TGT LONG'] = ''
+    if '99999' in wpn['TGT ELEV']:
+        wpn['TGT ELEV'] = ''
+
+
     try:
         wpn['BULL'] = bullcalculate(wpn['TGT LAT'], wpn['TGT LONG'])
     except:
@@ -431,6 +457,12 @@ def maldparse(wpn):
     #print(wpn['TGT LAT'])
     #print(wpn['TGT LONG'])
     #print(wpn['TGT ELEV'])
+    try:
+        wpn['TGT Name'] = 'MALDGRP_' + str(wpn['Mission Group']).zfill(2) + " " + 'MSN'+ str(wpn['Mission ID Number'])
+        if wpn['Mission ID Number'] == '9999':
+            wpn['TGT Name'] = ''
+    except:
+        wpn['TGT Name'] = ''
 
     if wpn['Ingress Payload Control'] == "Payload Off (Decoy/Jammer)":
         wpn['INGRESS'] = 'OFF'
@@ -445,6 +477,7 @@ def maldparse(wpn):
     wpn['Delay'] = 'I:' + str(wpn['INGRESS']) + "/O:" + str(wpn['ORBIT'])
     #print(wpn['Delay'])
     return wpn
+
 def gwdparse(wpn):
     if wpn['Tail Year'] == '0':
         wpn['Tail Year'] = '00'
@@ -505,7 +538,10 @@ def gwdparse(wpn):
         wpn['TGT ELEV'] = float(wpn['Target Elevation'].replace('  feet', '').replace('+ ', ''))
         wpn['TGT ELEV'] = str(round(wpn['TGT ELEV'])) + "' " + wpn['Elevation Ref']
     except:
-        wpn['TGT LAT'] = 'ERR'
+        wpn['TGT ELEV'] = 'ERR'
+
+    if not 'TGT Name' in wpn:
+        wpn['TGT Name'] = ''
 
     try:
         wpn['BULL'] = bullcalculate(wpn['TGT LAT'], wpn['TGT LONG'])
@@ -524,6 +560,45 @@ def gwdparse(wpn):
     else:
         wpn['LS'] = wpn['Master Location']
 
+    try:
+        DR = float(wpn['Weapon Down Range'].replace(' feet','').replace('+ ','').replace('- ','').replace(' ',''))
+        if '+' in wpn['Weapon Down Range']:
+            wpn['Weapon Down Range'] = DR
+        elif '-' in wpn['Weapon Down Range']:
+            wpn['Weapon Down Range'] = DR * -1
+    except:
+        pass
+    try:
+        CR = float(wpn['Weapon Cross Range'].replace(' feet','').replace('+ ','').replace('- ','').replace(' ',''))
+        if '+' in wpn['Weapon Cross Range']:
+            wpn['Weapon Cross Range'] = CR
+        elif '-' in wpn['Weapon Cross Range']:
+            wpn['Weapon Cross Range'] = CR * -1
+    except:
+        pass
+
+    try:
+        CRMD = float(wpn['Cross Range Miss Distance'].replace(' feet','').replace('+ ','').replace('- ','').replace(' ',''))
+        if '+' in wpn['Cross Range Miss Distance']:
+            wpn['Cross Range Miss Distance'] = CRMD
+        elif '-' in wpn['Cross Range Miss Distance']:
+            wpn['Cross Range Miss Distance'] = CRMD * -1
+    except:
+        pass
+
+    try:
+        DRMD = float(wpn['Down Range Miss Distance'].replace(' feet','').replace('+ ','').replace('- ','').replace(' ',''))
+        if '+' in wpn['Down Range Miss Distance']:
+            wpn['Down Range Miss Distance'] = DRMD
+        elif '-' in wpn['Down Range Miss Distance']:
+            wpn['Down Range Miss Distance'] = DRMD * -1
+    except:
+        pass
+
+    try:
+        wpn['FCI'] = round(np.arctan(float(CRMD)/float(DR))*180/np.pi,3)
+    except:
+        pass
 
     wpn['GS'] = round(float(wpn['Ground Speed'].replace('  ft/sec', '').replace('+ ', '')) * 0.592484)
 
