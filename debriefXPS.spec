@@ -16,7 +16,7 @@ added_files = [
 ]
 
 a = Analysis(['debrief.spec'],
-             pathex=['P:\\Python\\bidds-debrief'],
+             pathex=['C:\\Users\\Lobo\\Documents\\Python\\bidds-debrief'],
              binaries=[],
              datas=added_files,
              hiddenimports=['openpyxl','PyQt5.uic','timeit','utils','msnparse','pyproj.datadir','json','subprocess','pynmea2','csv','xlrd','resource','pathlib'],
@@ -34,7 +34,7 @@ exe = EXE(pyz,
           [],
           exclude_binaries=True,
           name='debrief',
-          debug=False,
+          debug=True,
           bootloader_ignore_signals=False,
           strip=False,
           upx=True,

@@ -12,12 +12,15 @@ def jdamparse(wpn):
     else:
         if wpn['LP DT Num'].isnumeric():
             if wpn['LP DT Num'] == '127':
-                if 'Continuous' in wpn['TGP Mode']:
-                    wpn['Dest'] = "DS-Cont" + str(wpn['Stream operation']).replace('True',' ON').replace('False',' OFF')
-                elif 'Static' in wpn['TGP Mode']:
-                    wpn['Dest'] = "DS-Stat"
-                elif 'Predict' in wpn['TGP Mode']:
-                    wpn['Dest'] = "DS-Pred" + str(wpn['Stream operation']).replace('True',' ON').replace('False',' OFF')
+                if 'TGP Mode' in wpn:
+                    if 'Continuous' in wpn['TGP Mode']:
+                        wpn['Dest'] = "DS-Cont" + str(wpn['Stream operation']).replace('True',' ON').replace('False',' OFF')
+                    elif 'Static' in wpn['TGP Mode']:
+                        wpn['Dest'] = "DS-Stat"
+                    elif 'Predict' in wpn['TGP Mode']:
+                        wpn['Dest'] = "DS-Pred" + str(wpn['Stream operation']).replace('True',' ON').replace('False',' OFF')
+                else:
+                    wpn['Dest'] = "DS"
             else:
                 wpn['Dest'] = "D" + str(wpn['LP DT Num'])
                 if 'TGP Mode' in wpn:
@@ -30,6 +33,8 @@ def jdamparse(wpn):
                             wpn['Dest'] = wpn['Dest'] + "-Pred" + str(wpn['Stream operation']).replace('True',
                                                                                                             ' ON').replace(
                                 'False', ' OFF')
+                else:
+                    wpn['Dest'] = "DS"
 
 
     # print(wpn['Dest'])
