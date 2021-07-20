@@ -53,7 +53,7 @@ def parserelease():
 
     print('Parsing Releases...')
 
-    debug = False
+    debug = True
 
     record = Group(Literal("Record Number") + Word(nums)) + Suppress(Literal("Weapon Scoring") + lineEnd())
     msnEventExpanded = Suppress(Group(Literal("Launch") + LineEnd())) | Suppress(
@@ -61,19 +61,28 @@ def parserelease():
     eventKey = SkipTo(": ")
     # Improve?
     eventValue = SkipTo(lineEnd)
-    eventData = NotAny("Launch") + NotAny("Gravity Weapon Scoring") + NotAny("Weapon Launch") + NotAny('Weapon Jettison') + Group(
+    eventData = NotAny("Launch") + NotAny("Gravity Weapon Scoring") + NotAny("Weapon Launch") + NotAny(
+        'Weapon Jettison') + Group(
         eventKey + Suppress(":") + eventValue) + Suppress(lineEnd())
     recordBlock = record + OneOrMore(eventData) + msnEventExpanded
 
     pData = Suppress(Literal("PERTINENT DATA"))
     SPACE_CHARS = ' \t'
     dataField = CharsNotIn(SPACE_CHARS)
-    space = Word(SPACE_CHARS, exact=1) ^ Word(SPACE_CHARS, exact=2) ^ Word(SPACE_CHARS, exact=3) ^ Word(SPACE_CHARS,exact=4) ^ Word(SPACE_CHARS, exact=5) #^ Word(SPACE_CHARS, exact=8)
+    space = Word(SPACE_CHARS, exact=1) ^ Word(SPACE_CHARS, exact=2) ^ Word(SPACE_CHARS, exact=3) ^ Word(SPACE_CHARS,
+                                                                                                        exact=4) ^ Word(
+        SPACE_CHARS, exact=5)  # ^ Word(SPACE_CHARS, exact=8)
     dataKey = delimitedList(dataField, delim=space, combine=True)
     dataValue = Combine(dataField + ZeroOrMore(space + dataField))
+
+    spaceAlternate = Word(SPACE_CHARS, exact=8) ^ Word(SPACE_CHARS, exact=12)
+    dataValueStoreDescription = Combine(dataField + ZeroOrMore(spaceAlternate))
+
     dataBlock = Group(dataKey + dataValue) + Optional(Suppress("(" + Word(alphanums) + ")")) + Suppress(
         LineEnd()) | Group(dataKey + Suppress("(") + Word(alphanums) + Suppress(")")) + Suppress(LineEnd()) | Group(
-        dataKey + dataValue) + Suppress(LineEnd())
+        dataKey + dataValue) + Suppress(LineEnd()) | Group(
+        Literal("Store Description") + dataValueStoreDescription) + LineEnd()
+    #Group(Literal("Store Description") + dataValueStoreDescription) + Suppress(Word(alphanums) + "(" + Word(alphanums) + ")" + LineEnd())
 
     name_parser = Dict(recordBlock + pData + OneOrMore(dataBlock))
 
@@ -349,13 +358,18 @@ def evnparse(evn):
         evn['WindSpeed'] = "ERR"
 
     try:
+        evn['Wind'] = str(f"{int(evn['WindDir']):03d}") + '/' + str(evn['WindSpeed'])
+    except:
+        evn['Wind'] = ""
+    try:
         BuffersN = float(evn['SPPA Distance North'].replace('  feet', '').replace('+ ', '').replace('- ', ''))
         BuffersE = float(evn['SPPA Distance East'].replace('  feet', '').replace('+ ', '').replace('- ', ''))
         if "- " in evn['SPPA Distance North']:
             BuffersN = BuffersN * -1
         if "- " in evn['SPPA Distance East']:
             BuffersE = BuffersE * -1
-        evn['Buffers'] = round(Vector2Polar(BuffersN,BuffersE)[1])
+        degree_sign = u'\N{DEGREE SIGN}'
+        evn['Buffers'] = str(round(Vector2Polar(BuffersN,BuffersE)[1])) +"'/"+str(round(Vector2Polar(BuffersN,BuffersE)[0])) + degree_sign
     except:
         evn['Buffers'] = "ERR"
 
@@ -437,6 +451,7 @@ def msnevnpair(input, msnevents):
     WindDir= [msnevents['WindDir'].loc[x] for x in msnEventsIndex]
     WindSpeed = [msnevents['WindSpeed'].loc[x] for x in msnEventsIndex]
     Buffers = [msnevents['Buffers'].loc[x] for x in msnEventsIndex]
+    Wind = [msnevents['Wind'].loc[x] for x in msnEventsIndex]
 
 
 
@@ -464,6 +479,7 @@ def msnevnpair(input, msnevents):
 
     input.insert(len(input.columns), "Mach", Mach, False)
     input.insert(len(input.columns), "Temp", Temp, False)
+    input.insert(len(input.columns), "Wind", Wind, False)
     input.insert(len(input.columns), "WindDir", WindDir, False)
     input.insert(len(input.columns), "WindSpeed", WindSpeed, False)
 

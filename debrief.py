@@ -499,8 +499,6 @@ class UiMsnPicker(QDialog):
             self.close()
 
 
-
-
 def Parse():
 
     start_time = timeit.default_timer()
@@ -559,7 +557,7 @@ def Parse():
         dfJDAMfiltered = dfJDAM.filter(
             ['Record Number', 'Tail', 'wpn', 'Dest', 'TOT', 'TOR', 'BULL', 'TOF', 'WPN Type', 'TGT Name', 'TGT LAT',
              'TGT LONG', 'TGT ELEV', 'PrimeNav', 'XHair', 'PrimeNavAiding', 'Buffers','FOM', 'ALT', 'GTRK', 'IAS',
-             'MHDG', 'TAS', 'LS', 'GS', 'LARstatus','Delay','FCI','Mach','LAT','LONG','BULLrel'], axis=1)
+             'MHDG', 'TAS', 'LS', 'GS', 'LARstatus','Delay','FCI','Mach','LAT','LONG','BULLrel','Wind'], axis=1)
         dfAllWPNS.append(dfJDAMfiltered)
     if len(config.gwd) > 0:
         dfGWD = pd.DataFrame(config.gwd)
@@ -570,7 +568,7 @@ def Parse():
         dfGWDfiltered = dfGWD.filter(
             ['Record Number', 'Tail', 'wpn', 'Dest', 'TOT', 'TOR', 'BULL', 'TOF', 'WPN Type', 'TGT Name', 'TGT LAT',
              'TGT LONG', 'TGT ELEV', 'PrimeNav', 'XHair', 'PrimeNavAiding', 'Buffers','FOM', 'ALT', 'GTRK', 'IAS',
-             'MHDG', 'TAS', 'LS', 'GS', 'LARstatus','Delay','FCI','Mach','LAT','LONG','BULLrel'], axis=1)
+             'MHDG', 'TAS', 'LS', 'GS', 'LARstatus','Delay','FCI','Mach','LAT','LONG','BULLrel','Wind'], axis=1)
         dfAllWPNS.append(dfGWDfiltered)
     if len(config.wcmd) > 0:
         dfWCMD = pd.DataFrame(config.wcmd)
@@ -580,7 +578,7 @@ def Parse():
         dfWCMDfiltered = dfWCMD.filter(
             ['Record Number', 'Tail', 'wpn', 'Dest', 'TOT', 'TOR', 'BULL', 'TOF', 'WPN Type', 'TGT Name', 'TGT LAT',
              'TGT LONG', 'TGT ELEV', 'PrimeNav', 'XHair', 'PrimeNavAiding', 'Buffers','FOM', 'ALT', 'GTRK', 'IAS',
-             'MHDG', 'TAS', 'LS', 'GS', 'LARstatus','Delay','FCI','Mach','LAT','LONG','BULLrel'], axis=1)
+             'MHDG', 'TAS', 'LS', 'GS', 'LARstatus','Delay','FCI','Mach','LAT','LONG','BULLrel','Wind'], axis=1)
         dfAllWPNS.append(dfWCMDfiltered)
     if len(config.jassm) > 0:
         dfJASSM = pd.DataFrame(config.jassm)
@@ -597,7 +595,7 @@ def Parse():
         dfJASSMfiltered = dfJASSM.filter(
             ['Record Number', 'Tail', 'wpn', 'Dest', 'TOT', 'TOR', 'BULL', 'TOF', 'WPN Type', 'TGT Name', 'TGT LAT',
              'TGT LONG', 'TGT ELEV', 'PrimeNav', 'XHair', 'PrimeNavAiding', 'Buffers','FOM', 'ALT', 'GTRK', 'IAS',
-             'MHDG', 'TAS', 'LS', 'GS', 'LARstatus','Delay','FCI','Mach','LAT','LONG','BULLrel'], axis=1)
+             'MHDG', 'TAS', 'LS', 'GS', 'LARstatus','Delay','FCI','Mach','LAT','LONG','BULLrel','Wind'], axis=1)
         dfAllWPNS.append(dfJASSMfiltered)
     if len(config.mald) > 0:
         dfMALD = pd.DataFrame(config.mald)
@@ -615,7 +613,7 @@ def Parse():
         dfMALDfiltered = dfMALD.filter(
             ['Record Number', 'Tail', 'wpn', 'Dest', 'TOT', 'TOR', 'BULL', 'TOF', 'WPN Type', 'TGT Name', 'TGT LAT',
              'TGT LONG', 'TGT ELEV', 'PrimeNav', 'XHair', 'PrimeNavAiding', 'Buffers','FOM', 'ALT', 'GTRK', 'IAS',
-             'MHDG', 'TAS', 'LS', 'GS', 'LARstatus','Delay','FCI','Mach','LAT','LONG','BULLrel'], axis=1)
+             'MHDG', 'TAS', 'LS', 'GS', 'LARstatus','Delay','FCI','Mach','LAT','LONG','BULLrel','Wind'], axis=1)
         dfAllWPNS.append(dfMALDfiltered)
 
 

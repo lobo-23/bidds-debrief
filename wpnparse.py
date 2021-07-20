@@ -129,7 +129,7 @@ def jdamparse(wpn):
 
     wpn['WPN Code']= wpn['WPN Type']
     try:
-        wpn['WPN Type'] = wpn['Store Description'].replace('GBU-','').replace('(V)','v')
+        wpn['WPN Type'] = wpn['Store Description'].replace('GBU-','').replace('(V)','v').strip()
         if wpn['WPN Type'] == '38' and wpn['Laser Kit Good'] == 'True':
             wpn['WPN Type'] = '54'
             Laser = wpn['Laser Code 1'] + wpn['Laser Code 2'] + wpn['Laser Code 3']+ wpn['Laser Code 4']
@@ -601,7 +601,7 @@ def gwdparse(wpn):
         pass
 
     try:
-        wpn['FCI'] = round(np.arctan(float(CRMD)/float(DR))*180/np.pi,3)
+        wpn['FCI'] = str(round(np.arctan(float(CRMD)/float(DR))*180/np.pi,2)) + ' (' + str(int(CRMD))  +  "')"
     except:
         pass
 
@@ -621,7 +621,8 @@ def gwdparse(wpn):
             BuffersN = BuffersN * -1
         if "W " in wpn['Trackball Buffer East']:
             BuffersE = BuffersE * -1
-        wpn['Buffers'] = round(Vector2Polar(BuffersN,BuffersE)[1])
+        degree_sign = u'\N{DEGREE SIGN}'
+        wpn['Buffers'] = str(round(Vector2Polar(BuffersN,BuffersE)[1])) +"'/"+str(round(Vector2Polar(BuffersN,BuffersE)[0])) + degree_sign
     except:
         wpn['Buffers'] = "ERR"
     wpn['LARstatus'] = 'RANGE'
